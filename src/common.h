@@ -33,7 +33,6 @@
 #include <syslog.h>
 #include <semaphore.h>
 #include "domnode.h"
-#include <generated/build.h>
 
 /* default chroot path. this might be redefined in compile time */ 
 #ifndef DNRD_ROOT

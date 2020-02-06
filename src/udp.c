@@ -59,9 +59,9 @@ static int udp_send(int sock, srvnode_t *srv, void *msg, int len)
 		sizeof(struct sockaddr_in));
 
     if (rc != len) {
-	log_msg(LOG_ERR, "sendto error: %s: ",
-		inet_ntoa(srv->addr.sin_addr), strerror(errno));
-	return (rc);
+      char ip6addrstr[INET6_ADDRSTRLEN];
+      log_msg(LOG_ERR, "sendto error: %s: ", inet_ntop(AF_INET6, &srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), strerror(errno));
+      return (rc);
     }
     if ((srv->send_time == 0)) srv->send_time = now;
     srv->send_count++;
@@ -192,27 +192,27 @@ query_t *udp_handle_request()
 static int reply_recv(query_t *q, void *msg, int len)
 {
     int	rc, fromlen;
-    struct sockaddr_in from;
+    struct sockaddr_in6 from;
+    char ip6addrstr[INET6_ADDRSTRLEN];
 
     fromlen = sizeof(struct sockaddr_in);
     rc = recvfrom(q->sock, msg, len, 0,
 		  (struct sockaddr *) &from, &fromlen);
 
     if (rc == -1) {
-	log_msg(LOG_ERR, "recvfrom error: %s",
-		inet_ntoa(q->srv->addr.sin_addr));
-	return (-1);
+      log_msg(LOG_ERR, "recvfrom error: %s",
+        inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (-1);
+    } else if (rc > len) {
+      log_msg(LOG_NOTICE, "packet too large: %s",
+        inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (0);
     }
-    else if (rc > len) {
-	log_msg(LOG_NOTICE, "packet too large: %s",
-		inet_ntoa(q->srv->addr.sin_addr));
-	return (0);
-    }
-    else if (memcmp(&from.sin_addr, &q->srv->addr.sin_addr,
-		    sizeof(from.sin_addr)) != 0) {
-	log_msg(LOG_WARNING, "unexpected server: %s",
-		inet_ntoa(from.sin_addr));
-	return (0);
+    else if (memcmp(&from.sin6_addr, &q->srv->addr.sin6_addr,
+		    sizeof(from.sin6_addr)) != 0) {
+      log_msg(LOG_WARNING, "unexpected server: %s",
+        inet_ntop(AF_INET6, &from.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (0);
     }
 
     return (rc);
@@ -279,8 +279,11 @@ void udp_handle_reply(query_t *prev)
       
     /* this server is obviously alive, we reset the counters */
     q->srv->send_time = 0;
-    if (q->srv->inactive) log_debug(1, "Reactivating server %s",
-				 inet_ntoa(q->srv->addr.sin_addr));
+    if (q->srv->inactive) {
+      char ip6addrstr[INET6_ADDRSTRLEN];
+      log_debug(1, "Reactivating server %s",
+				 inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+    }
     q->srv->inactive = 0;
     /* remove query from list and destroy it */
     query_delete_next(prev);
@@ -317,12 +320,13 @@ int udp_send_dummy(srvnode_t *s) {
 
   if ((q=query_add(NULL, s, &srcaddr, dnsbuf, sizeof(dnsbuf))) != NULL) {
     int rc;
+    char ip6addrstr[INET6_ADDRSTRLEN];
     q = q->next; /* query add returned the query 1 before in list */
     /* don't let those queries live too long */
     q->ttl = reactivate_interval;
     memset(&srcaddr, 0, sizeof(srcaddr));
     log_debug(2, "Sending dummy id=%i to %s", ((unsigned short *)dnsbuf)[0], 
-	      inet_ntoa(s->addr.sin_addr));
+	      inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     /*  return dnssend(s, &dnsbuf, sizeof(dnsbuf)); */
     rc=udp_send(q->sock, s, dnsbuf, sizeof(dnsbuf));
     ((unsigned short *)dnsbuf)[0]++;

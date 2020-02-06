@@ -153,12 +153,13 @@ void init_socket(void) {
     if (servent_udp->s_port != servent_tcp->s_port)
 			log_err_exit(-1, "domain ports for udp & tcp differ. "
 									 "Check /etc/services");
-    recv_addr.sin_port = servent_udp ? servent_udp->s_port : htons(53);
+
+    recv_addr.sin6_port = servent_udp ? servent_udp->s_port : htons(53);
 
     /*
      * Setup our DNS query reception socket.
      */
-    if ((isock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((isock = socket(PF_INET6, SOCK_DGRAM, 0)) < 0) {
 			log_err_exit(-1, "isock: Couldn't open socket");
 		}
     else {
@@ -173,12 +174,11 @@ void init_socket(void) {
      * Setup our DNS tcp proxy socket.
      */
 #ifdef ENABLE_TCP
-    if ((tcpsock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((tcpsock = socket(PF_INET6, SOCK_STREAM, 0)) < 0) {
 			log_err_exit(-1, "tcpsock: Couldn't open socket");
-    }
-    else {
-	int opt = 1;
-	setsockopt(tcpsock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    } else {
+	    int opt = 1;
+	    setsockopt(tcpsock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     }
     if (bind(tcpsock, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0)
 			log_err_exit(-1, "tcpsock: Couldn't bind local address");
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 	 * safer to do a standard initialization in main().
 	 */
 	memset(&recv_addr, 0, sizeof(recv_addr));
-	recv_addr.sin_family = AF_INET;
+	recv_addr.sin6_family = AF_INET6;
 	
 	openlog(progname, LOG_PID, LOG_DAEMON);
 	
@@ -315,8 +315,8 @@ int main(int argc, char *argv[])
 	do {
 		s=p->srvlist;
 		while ((s=s->next) != p->srvlist) {
-			s->addr.sin_family = AF_INET;
-			s->addr.sin_port   = htons(53);
+			s->addr.sin6_family = AF_INET6;
+			s->addr.sin6_port   = htons(53);
 		}
 		/* set the first server as current */
 		p->current = p->srvlist->next;

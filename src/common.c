@@ -35,8 +35,6 @@
 #include "common.h"
 #include "lib.h"
 #include "dns.h"
-#include <generated/build.h>
-#include <generated/version.h>
 
 #ifdef DEBUG
 #define OPT_DEBUG 1
@@ -56,7 +54,7 @@ const char*         progname = 0;
 #if defined(__sun__)
 const char*         pid_file = "/var/tmp/dnrd.pid";
 #else
-const char*         pid_file = "/var/run/dnrd.pid";
+const char*         pid_file = "/var/tmp/dnrd.pid";
 #endif
 #endif
 
@@ -108,15 +106,9 @@ fd_set              fdmaster;
  * the port can be changed through command-line options.
  */
 /*
-#if defined(__sun__)
-struct sockaddr_in recv_addr = { AF_INET, 53, { { {0, 0, 0, 0} } } };
-#else
-struct sockaddr_in recv_addr = { AF_INET, 53, { INADDR_ANY } };
-#endif
-*/
 
 /* init recv_addr in main.c instead of here */ 
-struct sockaddr_in recv_addr;
+struct sockaddr_in6 recv_addr;
 
 #ifdef ENABLE_PIDFILE
 /* check if a pid is running 

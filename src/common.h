@@ -33,7 +33,6 @@
 #include <syslog.h>
 #include <semaphore.h>
 #include "domnode.h"
-#include <generated/build.h>
 
 /* default chroot path. this might be redefined in compile time */ 
 #ifndef DNRD_ROOT
@@ -92,7 +91,7 @@ extern int                 isock;     /* for communication with clients */
 extern int                 tcpsock;   /* same as isock, but for tcp requests */
 extern int                 select_timeout; /* select timeout in seconds */
 extern int                 forward_timeout; /* timeout for forward DNS */
-extern struct sockaddr_in  recv_addr; /* address on which we receive queries */
+extern struct sockaddr_in6 recv_addr; /* address on which we receive queries */
 #ifndef __CYGWIN__
 extern uid_t               daemonuid; /* to switch to once daemonised */
 extern gid_t               daemongid; /* to switch to once daemonised */

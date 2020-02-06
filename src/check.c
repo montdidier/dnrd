@@ -94,12 +94,13 @@ int check_query(void *msg, int len) {
  */
 
 int check_reply(srvnode_t *s, void *msg, int len) {
+  char ip6addrstr[INET6_ADDRSTRLEN];
   short int flags = ntohs(((short int *)msg)[1]); /* flags */
 
   /* bad server replies are pretty bad. Lets log them to syslog */
   if (len <12) {
     log_msg(LOG_WARNING, "Reply packet was to small. Ignoring reply from %s",
-	    inet_ntoa(s->addr.sin_addr));
+	    inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     return -1;
   }
   /* we have already checkd for oversized packets */
@@ -107,14 +108,14 @@ int check_reply(srvnode_t *s, void *msg, int len) {
   /* check if Z is set. It should never been set */
   if (flags & MASK_Z) {
     log_msg(LOG_WARNING, "Z was set. Ignoring reply from %s",
-		inet_ntoa(s->addr.sin_addr));
+	    inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     return -1;
   }
 
   /* Check if it is a query, if QR is set */
   if (! (flags & MASK_QR)) {
     log_msg(LOG_WARNING, "QR was not set. Ignoring reply from %s",
-	    inet_ntoa(s->addr.sin_addr));
+	    inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     return -1;
   }
 

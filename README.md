@@ -58,7 +58,6 @@ Otherwise, use DNRD :)
 
 Author
 ------
-The original version of dnrd was written by Brad Garcia garsh@home.com. Other
-contributors are listed in the HISTORY file included with the source code. This
-project is in need of a maintainer. It's current maintainer (benjaminpetrin)
-isn't active in this project.
+The original author of dnrd was [Brad Garcia](mailto:garsh@home.com?subject=[github]%20dnrd).
+
+The current maintainer is [Chris Kruger](https://github.com/montdidier).

@@ -29,7 +29,7 @@
 
 typedef struct _srvnode {
   /*  int                 sock;*/ /* the communication socket */
-  struct sockaddr_in  addr;      /* IP address of server */
+  struct sockaddr_in6 addr;      /* IP address of server */
   time_t              inactive; /* is this server active? */
   unsigned int        send_count;
   int                 send_time;

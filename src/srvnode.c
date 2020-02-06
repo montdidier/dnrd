@@ -107,15 +107,15 @@ srvnode_t *destroy_srvlist(srvnode_t *head) {
 /* add a server.*/
 srvnode_t *add_srv(srvnode_t *head, const char *ipaddr) {
   srvnode_t *p;
-  struct sockaddr_in addr;
+  struct sockaddr_in6 addr;
 
   /* head should never be NULL. a new list is allocated with newdomnode */
   assert(head != NULL);
-  if (!inet_aton(ipaddr, &addr.sin_addr)) {
+  if (!inet_aton(ipaddr, &addr.sin6_addr)) {
     return NULL;
   }
   p = alloc_srvnode();
-  memcpy(&p->addr.sin_addr, &addr.sin_addr, sizeof(p->addr.sin_addr));
+  memcpy(&p->addr.sin6_addr, &addr.sin6_addr, sizeof(p->addr.sin6_addr));
   p->inactive = 0;
   ins_srvnode(head, p);
   return p;

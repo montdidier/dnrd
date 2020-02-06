@@ -93,7 +93,7 @@ int handle_query(const struct sockaddr_in *fromaddrp, char *msg, int *len,
 		 domnode_t **dptr)
 
 {
-    int       replylen;
+    int replylen;
     domnode_t *d;
 
     if (opt_debug) {
@@ -101,13 +101,13 @@ int handle_query(const struct sockaddr_in *fromaddrp, char *msg, int *len,
 
 	snprintf_cname(msg, *len, 12, cname_buf, sizeof(cname_buf));
 	log_debug(3, "Received DNS query for \"%s\"", cname_buf);
-	if (dump_dnspacket("query", msg, *len) < 0)
+	if (dump_dnspacket("query", (unsigned char*)msg, *len) < 0)
 	  log_debug(3, "Format error");
     }
    
 #ifndef EXCLUDE_MASTER
     /* First, check to see if we are master server */
-    if ((replylen = master_lookup(msg, *len)) > 0) {
+    if ((replylen = master_lookup((unsigned char*)msg, *len)) > 0) {
 	log_debug(2, "Replying to query as master");
 	*len = replylen;
 	return 0;
@@ -151,8 +151,8 @@ int handle_query(const struct sockaddr_in *fromaddrp, char *msg, int *len,
     }
 
     if (d->current) {
-	log_debug(3, "Forwarding the query to DNS server %s",
-		  inet_ntoa(d->current->addr.sin_addr));
+      char ip6addrstr[INET6_ADDRSTRLEN];
+      log_debug(3, "Forwarding the query to DNS server %s", inet_ntop(AF_INET6, &d->current->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     } else {
       log_debug(3, "All servers deactivated. Replying with \"Server failure\"");
       if (!set_srvfail(msg, *len)) return -1;
@@ -220,9 +220,11 @@ void srv_stats(time_t interval) {
     last = now;
     do {
       if ((s=d->srvlist)) 
-	while ((s=s->next) != d->srvlist)
-	  log_debug(1, "stats for %s: send count=%i",
-		    inet_ntoa(s->addr.sin_addr), s->send_count);
+        while ((s=s->next) != d->srvlist) {
+          char ip6addrstr[INET6_ADDRSTRLEN];
+          log_debug(1, "stats for %s: send count=%i",
+		        inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), s->send_count);
+        }
     } while ((d=d->next) != domain_list);
   }
 }

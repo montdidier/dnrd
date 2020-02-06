@@ -90,7 +90,7 @@ query_t *query_create(domnode_t *d, srvnode_t *s) {
   q->ttl = forward_timeout;
   
   /* open a new socket */
-  if ((q->sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  if ((q->sock = socket(PF_INET6, SOCK_DGRAM, 0)) < 0) {
     log_msg(LOG_ERR, "query_create: Couldn't open socket");
     free(q);
     return NULL;
@@ -263,8 +263,10 @@ int query_count(void) {
 void query_dump_list(void) {
   query_t *p;
   for (p=&qlist; p->next != &qlist; p=p->next) {
+    char ipv6addrstr[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, &p->next->srv->addr.sin6_addr, ipv6addrstr, INET6_ADDRSTRLEN);
     log_debug(2, "srv=%s, myqid=%i, client_qid=%i", 
-	      inet_ntoa(p->next->srv->addr.sin_addr), p->next->my_qid, 
+	      ipv6addrstr, p->next->my_qid, 
 	      p->next->client_qid);
   }
 }

@@ -111,7 +111,7 @@ srvnode_t *add_srv(srvnode_t *head, const char *ipaddr) {
 
   /* head should never be NULL. a new list is allocated with newdomnode */
   assert(head != NULL);
-  if (!inet_aton(ipaddr, &addr.sin6_addr)) {
+  if (!inet_pton(AF_INET6, ipaddr, &addr.sin6_addr)) {
     return NULL;
   }
   p = alloc_srvnode();

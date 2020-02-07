@@ -89,7 +89,7 @@ char *set_srvfail(char *msg, const int len) {
  *
  * Assumptions: There is only one request per message.
  */
-int handle_query(const struct sockaddr_in *fromaddrp, char *msg, int *len,
+int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
 		 domnode_t **dptr)
 
 {

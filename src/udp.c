@@ -56,7 +56,7 @@ static int udp_send(int sock, srvnode_t *srv, void *msg, int len)
     time_t now = time(NULL);
     rc = sendto(sock, msg, len, 0,
 		(const struct sockaddr *) &srv->addr,
-		sizeof(struct sockaddr_in));
+		sizeof(struct sockaddr_in6));
 
     if (rc != len) {
       char ip6addrstr[INET6_ADDRSTRLEN];
@@ -98,7 +98,7 @@ query_t *udp_handle_request()
     int                len;
     const int          maxsize = UDP_MAXSIZE;
     static char        msg[UDP_MAXSIZE+4];
-    struct sockaddr_in from_addr;
+    struct sockaddr_in6 from_addr;
     int                fwd;
     domnode_t          *dptr;
     query_t *q, *prev;
@@ -195,7 +195,7 @@ static int reply_recv(query_t *q, void *msg, int len)
     struct sockaddr_in6 from;
     char ip6addrstr[INET6_ADDRSTRLEN];
 
-    fromlen = sizeof(struct sockaddr_in);
+    fromlen = sizeof(struct sockaddr_in6);
     rc = recvfrom(q->sock, msg, len, 0,
 		  (struct sockaddr *) &from, &fromlen);
 
@@ -236,12 +236,11 @@ void udp_handle_reply(query_t *prev)
     query_t *q = prev->next;
 
     log_debug(3, "handling socket %i", q->sock);
-    if ((len = reply_recv(q, msg, UDP_MAXSIZE)) < 0)
-      {
-	log_debug(1, "dnsrecv failed: %i", len);
-	query_delete_next(prev);
-	return; /* recv error */
-      }
+    if ((len = reply_recv(q, msg, UDP_MAXSIZE)) < 0) {
+      log_debug(1, "dnsrecv failed: %i", len);
+      query_delete_next(prev);
+      return; /* recv error */
+    }
     
     /* do basic checking */
     if (check_reply(q->srv, msg, len) < 0) {
@@ -251,23 +250,25 @@ void udp_handle_reply(query_t *prev)
     }
 
     if (opt_debug) {
-	char buf[256];
-	snprintf_cname(msg, len, 12, buf, sizeof(buf));
-	log_debug(3, "Received DNS reply for \"%s\"", buf);
+      char buf[256];
+      snprintf_cname(msg, len, 12, buf, sizeof(buf));
+      log_debug(3, "Received DNS reply for \"%s\"", buf);
     }
 
     dump_dnspacket("reply", msg, len);
-    addr_len = sizeof(struct sockaddr_in);
+    addr_len = sizeof(struct sockaddr_in6);
 
     /* was this a dummy reactivate query? */
     if (q->domain != NULL) {
+      char ip6addrstr[INET6_ADDRSTRLEN];
+
       /* no, lets cache the reply and send to client */
       cache_dnspacket(msg, len, q->srv);
 
       /* set the client qid */
       *((unsigned short *)msg) = q->client_qid;
       log_debug(3, "Forwarding the reply to the host %s",
-		inet_ntoa(q->client.sin_addr));
+		inet_ntop(AF_INET6, &q->client.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
       if (sendto(isock, msg, len, 0,
 		 (const struct sockaddr *)&q->client,
 		 addr_len) != len) {
@@ -313,7 +314,7 @@ int udp_send_dummy(srvnode_t *s) {
     /*    0x00, 0x01  */ /* QCLASS: IN */
   };
   query_t *q;
-  struct sockaddr_in srcaddr;
+  struct sockaddr_in6 srcaddr;
 
   /* should not happen */
   assert(s != NULL);

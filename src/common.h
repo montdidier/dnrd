@@ -76,7 +76,7 @@
 
 struct dnssrv_t {
   int                    sock;      /* for communication with server */
-  struct sockaddr_in     addr;      /* IP address of server */
+  struct sockaddr_in6    addr;      /* IP address of server */
   char*                  domain;    /* optional domain to match.  Set to
 					 zero for a default server */
   

@@ -129,24 +129,28 @@ static char *mkstring(string_t *string, const char *name, const int maxlen)
  */
 static int create_nameip(nameip_t *nameip, const int maxnamelen, char *ip)
 {
-    struct in_addr ipnum;
+    struct in6_addr ipnum;
+    char ip6addrstr[INET6_ADDRSTRLEN];
 
-    if (inet_aton(ip, &ipnum) == 0) {
-	log_msg(LOG_NOTICE, "invalid ip number: %s", ip);
-	return (0);
+    if (inet_pton(AF_INET6, ip, &ipnum) == 0) {
+      log_msg(LOG_NOTICE, "invalid ip number: %s", ip);
+      return (0);
     }
 
-    nameip->ipnum = ntohl(ipnum.s_addr);
+    nameip->ipnum = ntohl(ipnum.s6_addr);
     // Swap the bytes.  Don't assume 32-bit integers.
-    if (nameip->ipnum == ipnum.s_addr)
-        ipnum.s_addr = (((nameip->ipnum & 0xff000000) >> 24) |
+    if (nameip->ipnum == ipnum.s6_addr) {
+        /* FIXME
+        ipnum.s6_addr = (((nameip->ipnum & 0xff000000) >> 24) |
 		        ((nameip->ipnum & 0x00ff0000) >> 8 ) |
 		        ((nameip->ipnum & 0x0000ff00) << 8 ) |
 		        ((nameip->ipnum & 0x000000ff) << 24));
-    else
-        ipnum.s_addr = nameip->ipnum;
+        */
+    } else {
+        /* FIXME ipnum.s6_addr = nameip->ipnum; */
+    }
 
-    mkstring(&nameip->arpa, inet_ntoa(ipnum), maxnamelen);
+    mkstring(&nameip->arpa, inet_ntop(AF_INET6, &ipnum, ip6addrstr, INET6_ADDRSTRLEN), maxnamelen);
     
     return (DNS_NAMEIP);
 }

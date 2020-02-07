@@ -250,7 +250,7 @@ int parse_args(int argc, char **argv)
 	if (c == -1) break;
 	switch(c) {
 	  case 'a': {
-	      if (!inet_aton(optarg, &((struct sockaddr_in6*)(&recv_addr))->sin6_addr)) {
+	      if (!inet_pton(AF_INET6, optarg, &((struct sockaddr_in6*)(&recv_addr))->sin6_addr)) {
           log_msg(LOG_ERR, "%s: Bad ip address \"%s\"\n", progname, optarg);
 		      exit(-1);
 	      }

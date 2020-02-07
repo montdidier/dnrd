@@ -54,7 +54,7 @@
 
 typedef struct tcp_handle_info {
     int	               connect;
-    struct sockaddr_in client;
+    struct sockaddr_in6 client;
     unsigned           len;
 } tcp_handle_t;
 
@@ -76,15 +76,15 @@ static void alarm_handler(int dummy)
  *
  * Returns: the opened socket on success, -1 on failure.
  */
-static int ip_open(struct sockaddr_in server, unsigned int port)
+static int ip_open(struct sockaddr_in6 server, unsigned int port)
 {
     int	sock;
 
-    sock = socket(PF_INET, SOCK_STREAM, IPPROTO_IP);
+    sock = socket(PF_INET6, SOCK_STREAM, IPPROTO_IP);
     if (sock < 0) return (-1);
 
-    server.sin_family = AF_INET;
-    server.sin_port   = htons(port);
+    server.sin6_family = AF_INET6;
+    server.sin6_port   = htons(port);
 
     signal(SIGALRM, alarm_handler);
     alarm(10);
@@ -115,7 +115,7 @@ static void *tcp_handler(tcp_handle_t *dummy)
     fd_set	       connection, available;
     unsigned short     tcpsize;
     int	               connect = arg->connect;
-    struct sockaddr_in client  = arg->client;
+    struct sockaddr_in6 client = arg->client;
     domnode_t *d =domain_list;
     srvnode_t *s;
 

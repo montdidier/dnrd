@@ -54,7 +54,7 @@ const char*         progname = 0;
 #if defined(__sun__)
 const char*         pid_file = "/var/tmp/dnrd.pid";
 #else
-const char*         pid_file = "/var/tmp/dnrd.pid";
+const char*         pid_file = "/var/run/dnrd.pid";
 #endif
 #endif
 

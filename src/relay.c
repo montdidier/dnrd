@@ -31,6 +31,7 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
+#include <netdb.h>
 
 #include "query.h"
 #include "relay.h"
@@ -58,7 +59,7 @@ char *set_notfound(char *msg, const int len) {
 */
 
 /* prepare the dns packet for a Server Failure reply */
-char *set_srvfail(char *msg, const int len) {
+unsigned char *set_srvfail(unsigned char *msg, const int len) {
   if (len < 4) return NULL;
   /* FIXME: host to network should be called here */
   /* Set flags QR and AA */
@@ -89,7 +90,7 @@ char *set_srvfail(char *msg, const int len) {
  *
  * Assumptions: There is only one request per message.
  */
-int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
+int handle_query(const struct sockaddr_in6 *fromaddrp, unsigned char *msg, int *len,
 		 domnode_t **dptr)
 
 {
@@ -97,7 +98,7 @@ int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
     domnode_t *d;
 
     if (opt_debug) {
-      char cname_buf[256];
+      char cname_buf[NI_MAXHOST];
 
       snprintf_cname(msg, *len, 12, cname_buf, sizeof(cname_buf));
       log_debug(3, "Received DNS query for \"%s\"", cname_buf);
@@ -122,7 +123,7 @@ int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
     } else if (replylen < 0) return -1;
 
     /* get the server list for this domain */
-    d = search_subdomnode(domain_list, &msg[12], *len);
+    d = search_subdomnode(domain_list, (const char*)&msg[12], *len);
 
     if (no_srvlist(d->srvlist)) {
       /* there is no servers for this domain, reply with "Server failure" */

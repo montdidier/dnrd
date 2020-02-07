@@ -30,6 +30,7 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <netdb.h>
 #include "common.h"
 #include "relay.h"
 #include "cache.h"
@@ -63,7 +64,9 @@ static int udp_send(int sock, srvnode_t *srv, void *msg, int len)
       log_msg(LOG_ERR, "sendto error: %s: ", inet_ntop(AF_INET6, &srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), strerror(errno));
       return (rc);
     }
-    if ((srv->send_time == 0)) srv->send_time = now;
+    if (srv->send_time == 0) {
+       srv->send_time = now;
+    }
     srv->send_count++;
     return (rc);
 }
@@ -97,7 +100,7 @@ query_t *udp_handle_request()
     unsigned           addr_len;
     int                len;
     const int          maxsize = UDP_MAXSIZE;
-    static char        msg[UDP_MAXSIZE+4];
+    unsigned char      msg[UDP_MAXSIZE+4];
     struct sockaddr_in6 from_addr;
     int                fwd;
     domnode_t          *dptr;
@@ -152,7 +155,7 @@ query_t *udp_handle_request()
       /* we couldn't send the query */
 #ifndef EXCLUDE_MASTER
       int	packetlen;
-      char	packet[maxsize+4];
+      unsigned char	packet[maxsize+4];
 
       /*
        * If we couldn't send the packet to our DNS servers,
@@ -189,9 +192,10 @@ query_t *udp_handle_request()
  * Returns:  A positove number indicating of the bytes received, -1 on a
  *           recvfrom error and 0 if the received message is too large.
  */
-static int reply_recv(query_t *q, void *msg, int len)
+static int reply_recv(query_t *q, void *msg, size_t len)
 {
-    int	rc, fromlen;
+    int	rc; 
+    socklen_t fromlen;
     struct sockaddr_in6 from;
     char ip6addrstr[INET6_ADDRSTRLEN];
 
@@ -230,9 +234,9 @@ static int reply_recv(query_t *q, void *msg, int len)
 void udp_handle_reply(query_t *prev)
 {
   //    const int          maxsize = 512; /* According to RFC 1035 */
-    static char        msg[UDP_MAXSIZE+4];
-    int                len;
-    unsigned           addr_len;
+    unsigned char  msg[UDP_MAXSIZE+4];
+    int            len;
+    unsigned       addr_len;
     query_t *q = prev->next;
 
     log_debug(3, "handling socket %i", q->sock);
@@ -250,7 +254,7 @@ void udp_handle_reply(query_t *prev)
     }
 
     if (opt_debug) {
-      char buf[256];
+      char buf[NI_MAXHOST];
       snprintf_cname(msg, len, 12, buf, sizeof(buf));
       log_debug(3, "Received DNS reply for \"%s\"", buf);
     }

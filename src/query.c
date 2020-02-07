@@ -100,12 +100,9 @@ query_t *query_create(domnode_t *d, srvnode_t *s) {
 #ifdef RANDOM_SRC
   memset(&my_addr, 0, sizeof(my_addr));
   my_addr.sin6_family = AF_INET6;
-  my_addr.sin6_addr= in6addr_any;
-
+  my_addr.sin6_addr = in6addr_any;
   my_addr.sin6_port = htons(myrand(65536-1026) + 1025);
-  while ((bind(q->sock, (struct sockaddr *)&my_addr, 
-      sizeof(struct sockaddr))) == -1) {
-
+  while ((bind(q->sock, (struct sockaddr *)&my_addr, sizeof(my_addr))) == -1) {
     if (errno != EADDRINUSE) {
       log_msg(LOG_WARNING, "bind: %s", strerror(errno));
       break;
@@ -156,7 +153,7 @@ query_t *query_get_new(domnode_t *dom, srvnode_t *srv) {
 
 /* get qid, rewrite and add to list. Retruns the query before the added  */
 query_t *query_add(domnode_t *dom, srvnode_t *srv, 
-		   const struct sockaddr_in6* client, char* msg, 
+		   const struct sockaddr_in6* client, unsigned char* msg,
 		   unsigned len) {
 
   query_t *q, *p, *oldtail;

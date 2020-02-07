@@ -61,7 +61,7 @@ void query_init(void);
 query_t *query_create(domnode_t *d, srvnode_t *s);
 query_t *query_destroy(query_t *q);
 query_t *query_get_new(domnode_t *dom, srvnode_t *srv);
-query_t *query_add(domnode_t *dom, srvnode_t *srv, const struct sockaddr_in6* client, char* msg, 
+query_t *query_add(domnode_t *dom, srvnode_t *srv, const struct sockaddr_in6* client, unsigned char* msg, 
 		   unsigned len);
 query_t *query_delete_next(query_t *q);
 void query_timeout(time_t age);

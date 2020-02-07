@@ -105,7 +105,6 @@ fd_set              fdmaster;
  * which means we listen on all local addresses.  Both the address and
  * the port can be changed through command-line options.
  */
-/*
 
 /* init recv_addr in main.c instead of here */ 
 struct sockaddr_in6 recv_addr;
@@ -221,7 +220,7 @@ void log_msg(int type, const char *fmt, ...)
     va_start(ap, fmt);
 
     if (foreground) {
-			fprintf(stderr, get_typestr(type));
+			fprintf(stderr, "%s", get_typestr(type));
 			vfprintf(stderr, fmt, ap);
 			if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
     }
@@ -307,7 +306,7 @@ void log_err_exit(int exitcode, const char *fmt, ...)
     va_start(ap, fmt);
 
     if (foreground) {
-			fprintf(stderr, get_typestr(LOG_ERR));
+			fprintf(stderr, "%s", get_typestr(LOG_ERR));
 			vfprintf(stderr, fmt, ap);
 			if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
     }
@@ -371,7 +370,7 @@ char *cname2asc(const char *cname) {
      according to RFC 1035 a name must not be bigger than 255 octets.
    */
   if (cname) 
-    snprintf_cname((char *)cname, strlen(cname), 0, buf, sizeof(buf));
+    snprintf_cname((unsigned char *)cname, strlen(cname), 0, buf, sizeof(buf));
   else
     strncpy(buf, "(default)", sizeof(buf));
   return buf;

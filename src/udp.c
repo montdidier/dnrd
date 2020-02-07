@@ -104,12 +104,12 @@ query_t *udp_handle_request()
     query_t *q, *prev;
 
     /* Read in the message */
-    addr_len = sizeof(struct sockaddr_in);
+    addr_len = sizeof(struct sockaddr_in6);
     len = recvfrom(isock, msg, maxsize, 0,
 		   (struct sockaddr *)&from_addr, &addr_len);
     if (len < 0) {
-	log_debug(1, "recvfrom error %s", strerror(errno));
-	return NULL;
+      log_debug(1, "recvfrom error %s", strerror(errno));
+      return NULL;
     }
 
     /* do some basic checking */
@@ -121,11 +121,11 @@ query_t *udp_handle_request()
 
     /* If we already know the answer, send it and we're done */
     if (fwd == 0) {
-	if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
-		   addr_len) != len) {
-	    log_debug(1, "sendto error %s", strerror(errno));
-	}
-	return NULL;
+      if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
+           addr_len) != len) {
+          log_debug(1, "sendto error %s", strerror(errno));
+      }
+      return NULL;
     }
 
 
@@ -167,13 +167,13 @@ query_t *udp_handle_request()
        */
       
       if ((packetlen = master_dontknow(msg, len, packet)) > 0) {
-	query_delete_next(prev);
-	return NULL;
-	if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
-		   addr_len) != len) {
-	  log_debug(1, "sendto error %s", strerror(errno));
-	  return NULL;
-	}
+        query_delete_next(prev);
+        return NULL;
+        if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
+             addr_len) != len) {
+          log_debug(1, "sendto error %s", strerror(errno));
+          return NULL;
+        }
       }
 #endif
     }

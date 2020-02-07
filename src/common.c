@@ -248,12 +248,12 @@ void log_debug(int level, const char *fmt, ...)
 
     va_start(ap, fmt);
     if (foreground) {
-	fprintf(stderr, "Debug: ");
-	vfprintf(stderr, fmt, ap);
-	if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
-    }
-    else {
-	vsyslog(LOG_DEBUG, fmt, ap);
+      fprintf(stderr, "Debug: ");
+      vfprintf(stderr, fmt, ap);
+      if (fmt[strlen(fmt) - 1] != '\n')
+        fprintf(stderr, "\n");
+    } else {
+	    vsyslog(LOG_DEBUG, fmt, ap);
     }
     va_end(ap);
 }

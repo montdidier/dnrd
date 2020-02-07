@@ -41,8 +41,8 @@
 /* Allocate a domain node */
 domnode_t *alloc_domnode(void) {
   domnode_t *p = allocate(sizeof(domnode_t));
-  p->domain=NULL;
-  p->srvlist=alloc_srvnode();
+  p->domain = NULL;
+  p->srvlist = alloc_srvnode();
   /* actually we return a new emty list... */
   return p->next=p;
 }
@@ -54,7 +54,6 @@ domnode_t *alloc_domnode(void) {
 
 domnode_t *init_domainlist(void) {
   domnode_t *p = alloc_domnode();
-  
   return p;
 }
 
@@ -141,7 +140,8 @@ domnode_t *search_domnode(domnode_t *head, const char *name) {
 
 domnode_t *search_subdomnode(domnode_t *head, const char *name, 
 			     const int maxlen) {
-  domnode_t *d=head, *curr=head;
+  domnode_t *d = head;
+  domnode_t *curr = head;
   int h,n, maxfound=0;
   const char *p;
   assert( (head != NULL) && (name != NULL));

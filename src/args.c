@@ -319,31 +319,33 @@ int parse_args(int argc, char **argv)
 	  case 's': {
 	    domnode_t *p;
 	    char *s,*sep = strchr(optarg, (int)':');
-	    
+
 	    if (sep) { /* is a domain specified? */
 	      s = make_cname(strnlwr(sep+1,200),200);
 	      *sep = 0;
 	      if ( (p=search_domnode(domain_list, s)) == NULL) {
-		p=add_domain(domain_list, load_balance, s, 200);
-		log_debug(1, "Added domain %s %s load balancing", sep+1, 
-			  load_balance ? "with" : "without");
+          p=add_domain(domain_list, load_balance, s, 200);
+          log_debug(1, "Added domain %s %s load balancing", sep+1,
+              load_balance ? "with" : "without");
 	      } else {
-		free(s);
+          free(s);
 	      }
-	    } else p=domain_list;
-	    if (!add_srv(last_srvnode(p->srvlist), optarg)) {
-	      log_msg(LOG_ERR, "%s: Bad ip address \"%s\"\n",
-		      progname, optarg);
-	      exit(-1);
 	    } else {
-	      log_debug(1, "Server %s added to domain %s", optarg, 
-			sep ? sep+1:"(default)");
-	    }
-	    if (p->roundrobin != load_balance) {
-	      p->roundrobin =load_balance;
-	      log_debug(1, "Turned on load balancing for domain %s",
-			cname2asc(p->domain));
-	    }
+        p=domain_list;
+        if (!add_srv(last_srvnode(p->srvlist), optarg)) {
+          log_msg(LOG_ERR, "%s: Bad ip address \"%s\"\n",
+            progname, optarg);
+          exit(-1);
+        } else {
+          log_debug(1, "Server %s added to domain %s", optarg,
+            sep ? sep+1:"(default)");
+        }
+        if (p->roundrobin != load_balance) {
+          p->roundrobin =load_balance;
+          log_debug(1, "Turned on load balancing for domain %s",
+            cname2asc(p->domain));
+        }
+      }
 	    if (sep) *sep = ':';
 	    break;
 	  }

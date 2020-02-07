@@ -132,7 +132,7 @@ static int create_nameip(nameip_t *nameip, const int maxnamelen, char *ip)
     struct in6_addr ipnum;
     char ip6addrstr[INET6_ADDRSTRLEN];
 
-    if (inet_pton(AF_INET6, ip, &ipnum) == 0) {
+    if (inet_pton(AF_INET, ip, &ipnum) == 0) {
       log_msg(LOG_NOTICE, "invalid ip number: %s", ip);
       return (0);
     }
@@ -247,8 +247,8 @@ static dnsrec_t *add_nameip(char *name, const int maxlen, char *ipnum)
     
     rec = alloc_dnsrec(name, maxlen);
     if ((rec->type = create_nameip(&rec->u.nameip, maxlen, ipnum)) != 0) {
-	add_record(rec);
-	return (rec);
+      add_record(rec);
+      return (rec);
     }
 
     free_dnsrec(rec);
@@ -332,8 +332,8 @@ int read_hosts(char *filename, char *domain)
     FILE	*fp;
     
     if ((fp = fopen(filename, "r")) == NULL) {
-	log_msg(LOG_ERR, "can't open file: %s", filename);
-	return (1);
+      log_msg(LOG_ERR, "can't open file: %s", filename);
+      return (1);
     }
 
     log_debug(1, "Reading hosts from %s/%s, domain= %s", dnrd_root,
@@ -341,20 +341,20 @@ int read_hosts(char *filename, char *domain)
 
     count = dbc;
     while (fgets(line, sizeof(line), fp) != NULL) {
-	p = skip_ws((char *)noctrln(line, sizeof(line)));
-	if (*p == 0  ||  *p == '#') continue;
+      p = skip_ws((char *)noctrln(line, sizeof(line)));
+      if (*p == 0  ||  *p == '#') continue;
 
-	if (isdigit((int)(*p))) {
+      if (isdigit((int)(*p))) {
 	    /*
 	     * Usual hosts records start with an IP number.  This
 	     * might be followed by one or more names.  Every
 	     * name makes one DNS record.
 	     */
-	    get_word(&p, ipnum, sizeof(ipnum));
-	    while (*get_hostname(&p, domain, word, sizeof(word)) != 0) {
-		add_nameip(word, sizeof(word), ipnum);
-	    }
-	}
+        get_word(&p, ipnum, sizeof(ipnum));
+        while (*get_hostname(&p, domain, word, sizeof(word)) != 0) {
+          add_nameip(word, sizeof(word), ipnum);
+        }
+      }
     }
 	    
     fclose (fp);
@@ -736,8 +736,8 @@ int read_blacklist(const char *filename) {
 int master_init(void)
 {
     if (master_onoff == 0) {
-	log_msg(LOG_NOTICE, "local DNS master turned off");
-	return (0);
+      log_msg(LOG_NOTICE, "local DNS master turned off");
+      return (0);
     }
     log_debug(1, "initialising master DNS database");
 

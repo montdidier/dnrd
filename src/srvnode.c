@@ -28,12 +28,27 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <string.h>
 #include <assert.h>
 
 #include "srvnode.h"
 #include "lib.h"
 #include "common.h"
+
+#define V4MAPV6(sin6_addr, sin_addr) \
+    sin6_addr.s6_addr[0] = 0;   \
+    sin6_addr.s6_addr[1] = 0;   \
+    sin6_addr.s6_addr[2] = 0;   \
+    sin6_addr.s6_addr[3] = 0;   \
+    sin6_addr.s6_addr[4] = 0;   \
+    sin6_addr.s6_addr[5] = 0;   \
+    sin6_addr.s6_addr[10] = 0xFF; \
+    sin6_addr.s6_addr[11] = 0xFF; \
+    sin6_addr.s6_addr[12] = sin_addr.s_addr >> 24 & 0xFF; \
+    sin6_addr.s6_addr[13] = sin_addr.s_addr >> 16 & 0xFF; \
+    sin6_addr.s6_addr[14] = sin_addr.s_addr >> 8 & 0xFF;  \
+    sin6_addr.s6_addr[15] = sin_addr.s_addr & 0xFF;
 
 srvnode_t *alloc_srvnode(void) {
   srvnode_t *p = allocate(sizeof(srvnode_t));
@@ -107,17 +122,34 @@ srvnode_t *destroy_srvlist(srvnode_t *head) {
 /* add a server.*/
 srvnode_t *add_srv(srvnode_t *head, const char *ipaddr) {
   srvnode_t *p;
-  struct sockaddr_in6 addr;
+  struct addrinfo *res;
+  struct addrinfo hints;
+  int error;
 
   /* head should never be NULL. a new list is allocated with newdomnode */
   assert(head != NULL);
-  if (!inet_pton(AF_INET6, ipaddr, &addr.sin6_addr)) {
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET6;
+  hints.ai_flags = (AI_V4MAPPED | AI_ADDRCONFIG | AI_NUMERICHOST);
+
+  if ((error = getaddrinfo(ipaddr, 0, 0, &res))) {
+    log_debug(1, "getaddrinfo error: %s\n", gai_strerror(error));
     return NULL;
   }
+
   p = alloc_srvnode();
-  memcpy(&p->addr.sin6_addr, &addr.sin6_addr, sizeof(p->addr.sin6_addr));
+
+  if (res->ai_family == AF_INET) {
+    log_debug(1, "adding ipv4 address %s\n", inet_ntoa(((struct sockaddr_in*)res->ai_addr)->sin_addr));
+    V4MAPV6(p->addr.sin6_addr, ((struct sockaddr_in*)res->ai_addr)->sin_addr);
+  } else if (res->ai_family == AF_INET6) {
+    log_debug(1, "adding ipv6 address %s\n", res->ai_canonname);
+    memcpy(&p->addr.sin6_addr, res->ai_addr, sizeof(p->addr.sin6_addr));
+  }
   p->inactive = 0;
   ins_srvnode(head, p);
+  freeaddrinfo(res);
   return p;
 }
 

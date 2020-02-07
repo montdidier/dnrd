@@ -97,38 +97,38 @@ int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
     domnode_t *d;
 
     if (opt_debug) {
-	char      cname_buf[256];
+      char cname_buf[256];
 
-	snprintf_cname(msg, *len, 12, cname_buf, sizeof(cname_buf));
-	log_debug(3, "Received DNS query for \"%s\"", cname_buf);
-	if (dump_dnspacket("query", (unsigned char*)msg, *len) < 0)
-	  log_debug(3, "Format error");
-    }
+      snprintf_cname(msg, *len, 12, cname_buf, sizeof(cname_buf));
+      log_debug(3, "Received DNS query for \"%s\"", cname_buf);
+      if (dump_dnspacket("query", (unsigned char*)msg, *len) < 0)
+        log_debug(3, "Format error");
+      }
    
 #ifndef EXCLUDE_MASTER
     /* First, check to see if we are master server */
     if ((replylen = master_lookup((unsigned char*)msg, *len)) > 0) {
-	log_debug(2, "Replying to query as master");
-	*len = replylen;
-	return 0;
+      log_debug(2, "Replying to query as master");
+      *len = replylen;
+      return 0;
     } else if (replylen < 0) return -1;
 #endif
 
     /* Next, see if we have the answer cached */
     if ((replylen = cache_lookup(msg, *len)) > 0) {
-	log_debug(3, "Replying to query with cached answer.");
-	*len = replylen;
-	return 0;
-    }  else if (replylen < 0) return -1;
+      log_debug(3, "Replying to query with cached answer.");
+      *len = replylen;
+      return 0;
+    } else if (replylen < 0) return -1;
 
     /* get the server list for this domain */
-    d=search_subdomnode(domain_list, &msg[12], *len);
+    d = search_subdomnode(domain_list, &msg[12], *len);
 
     if (no_srvlist(d->srvlist)) {
       /* there is no servers for this domain, reply with "Server failure" */
-	log_debug(2, "Replying to query with \"Server failure\"");
-	if (!set_srvfail(msg, *len)) return -1;
-	return 0;
+      log_debug(2, "Replying to query with \"Server failure\"");
+      if (!set_srvfail(msg, *len)) return -1;
+      return 0;
     }
 
     if (d->roundrobin) {
@@ -146,7 +146,7 @@ int handle_query(const struct sockaddr_in6 *fromaddrp, char *msg, int *len,
 	  && (forward_timeout != 0)
 	  && (reactivate_interval != 0)
 	  && (now - d->current->send_time > forward_timeout)) {
-	deactivate_current(d);
+        deactivate_current(d);
       }
     }
 

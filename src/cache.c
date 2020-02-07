@@ -326,11 +326,11 @@ int cache_lookup(void *packet, int len)
     cache_t	*cx = NULL;
 
     if ((cache_onoff == 0) ||
-	parse_query(&query, packet, len) ||
-	(GET_QR(query.flags) == 1) ||
-	(*query.name == 0) ||
-	(query.class != DNS_CLASS_INET)) {
-	return (0);
+      parse_query(&query, packet, len) ||
+      (GET_QR(query.flags) == 1) ||
+      (*query.name == 0) ||
+      (query.class != DNS_CLASS_INET)) {
+      return (0);
     }
 
     /*
@@ -340,36 +340,36 @@ int cache_lookup(void *packet, int len)
     code = get_stringcode(query.name);
     for (cx = cachelist; cx != NULL; cx = cx->next) {
       if (cx->code == code  &&
-	  cx->type == query.type  &&
-	  cx->class == query.class  &&
-	  strcasecmp(cx->name, query.name) == 0) {
+        cx->type == query.type  &&
+        cx->class == query.class  &&
+        strcasecmp(cx->name, query.name) == 0) {
 	
-	log_debug(3, "cache: found %s, type= %d, class: %d, ans= %d, ttl= %d\n",
-		  cx->name, cx->type, cx->class, cx->p->ancount, cx->expires-time(NULL)); //XXX remove expiry
+        log_debug(3, "cache: found %s, type= %d, class: %d, ans= %d, ttl= %d\n",
+          cx->name, cx->type, cx->class, cx->p->ancount, cx->expires-time(NULL)); //XXX remove expiry
 
-	if (cx->positive > 0) {
-	  cx->lastused = time(NULL);
-	  //cx->expires  = cx->lastused + CACHE_TIME;
-	}
+        if (cx->positive > 0) {
+          cx->lastused = time(NULL);
+          //cx->expires  = cx->lastused + CACHE_TIME;
+        }
 
         if(cx->expires <= cx->lastused) {
           // this packet has expired, get rid of it!
-	  remove_cx(cx);
-	  free_cx(cx);
+          remove_cx(cx);
+          free_cx(cx);
           log_debug(3, "found cached entry is expired, deleting");
           return (0);
         }
 
-	memcpy(packet + 2, cx->p->packet + 2, cx->p->len - 2);
-	cache_hits++;
+        memcpy(packet + 2, cx->p->packet + 2, cx->p->len - 2);
+        cache_hits++;
 
-	/* lets check if the server is active */
-	if (ignore_inactive_cache_hits && cx->server->inactive ) {
-	  log_debug(2, "server is inactive. Skipping cache entry");
-	  return (0);
-	}
+        /* lets check if the server is active */
+        if (ignore_inactive_cache_hits && cx->server->inactive ) {
+          log_debug(2, "server is inactive. Skipping cache entry");
+          return (0);
+        }
 
-	return (cx->p->len);
+        return (cx->p->len);
       }
     }
 

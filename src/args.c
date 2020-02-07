@@ -3,6 +3,7 @@
  *
  * Copyright (C) 1998 Brad M. Garcia <garsh@home.com>
  * Copyright (C) 2008 Natanael Copa <natanael.copa@gmail.com>
+ * Copyright (C) 2020 Chris Kruger <montdidier@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,13 +65,13 @@ static struct option long_options[] =
 #endif
     {"retry",        1, 0, 'r'},
     {"server",       1, 0, 's'},
-		{"stats",        1, 0, 'S'},
+    {"stats",        1, 0, 'S'},
     {"timeout",      1, 0, 't'},
 #ifndef __CYGWIN__
     {"uid",          1, 0, 'u'},
-		/*
-		{"gid",          1, 0, 'g'},
-		*/
+    /*
+    {"gid",          1, 0, 'g'},
+    */
 #endif
     {"version",      0, 0, 'v'},
     {"dnrd-root",    1, 0, 'R'},
@@ -243,94 +244,94 @@ int parse_args(int argc, char **argv)
 
     while(1) {
 #if defined(__GNU_LIBRARY__)
-	c = getopt_long(argc, argv, short_options, long_options, 0);
+  c = getopt_long(argc, argv, short_options, long_options, 0);
 #else
-	c = getopt(argc, argv, short_options);
+  c = getopt(argc, argv, short_options);
 #endif
-	if (c == -1) break;
-	switch(c) {
-	  case 'a': {
-	      if (!inet_pton(AF_INET6, optarg, &((struct sockaddr_in6*)(&recv_addr))->sin6_addr)) {
+  if (c == -1) break;
+  switch(c) {
+    case 'a': {
+        if (!inet_pton(AF_INET6, optarg, &((struct sockaddr_in6*)(&recv_addr))->sin6_addr)) {
           log_msg(LOG_ERR, "%s: Bad ip address \"%s\"\n", progname, optarg);
-		      exit(-1);
-	      }
-	      break;
-	  }
-	case 'b': {
-	  load_balance = 1;
-	  break;
-	}
-	  case 'c': {
-	      copy_string(cache_param, optarg, sizeof(cache_param));
-	      break;
-	  }
-	  case 'd': {
-	    opt_debug = atoi(optarg);
-	    break;
-	  }
-	  case 'f': {
-	      foreground = 1;
-	      break;
-	  }
-	  case 'h': {
-	      give_help();
-	      exit(0);
-	      break;
-	  }
-	  case 'i' : {
-	    ignore_inactive_cache_hits = 1; 
-	    break;
-	  }
+          exit(-1);
+        }
+        break;
+    }
+  case 'b': {
+    load_balance = 1;
+    break;
+  }
+    case 'c': {
+        copy_string(cache_param, optarg, sizeof(cache_param));
+        break;
+    }
+    case 'd': {
+      opt_debug = atoi(optarg);
+      break;
+    }
+    case 'f': {
+        foreground = 1;
+        break;
+    }
+    case 'h': {
+        give_help();
+        exit(0);
+        break;
+    }
+    case 'i' : {
+      ignore_inactive_cache_hits = 1;
+      break;
+    }
 #ifdef ENABLE_PIDFILE
-	  case 'k': {
-	      if (!kill_current()) {
-		  printf("No %s daemon found.  Exiting.\n", progname);
-	      }
-	      exit(0);
-	      break;
-	  }
+    case 'k': {
+        if (!kill_current()) {
+      printf("No %s daemon found.  Exiting.\n", progname);
+        }
+        exit(0);
+        break;
+    }
 #endif
 #ifndef EXCLUDE_MASTER
-	  case 'B': {
-		  strncpy(blacklist, optarg, sizeof(blacklist));
-		  break;
-	  }
-		  
-	  case 'm': {
-		  if (strcmp(optarg, "off") == 0) master_onoff = 0;
-		  else strncpy(master_config, optarg, sizeof(master_config));
-		  break;
-	  }
-#endif
-	  case 'M': {
-	    max_sockets = atoi(optarg);
-	    log_debug(1, "Setting maximum number of open sockets to %i", 
-		      max_sockets);
-	    break;
-	  }
-	  case 'r': {
-	    if ((reactivate_interval = atoi(optarg)))
-	      log_debug(1, "Setting retry interval to %i seconds.", 
-			reactivate_interval);
-	    else 
-	      log_debug(1, "Retry=0. Will never deactivate servers.");
-	    break;
-	  }
-	  case 's': {
-	    domnode_t *p;
-	    char *s,*sep = strchr(optarg, (int)':');
+    case 'B': {
+      strncpy(blacklist, optarg, sizeof(blacklist));
+      break;
+    }
 
-	    if (sep) { /* is a domain specified? */
-	      s = make_cname(strnlwr(sep+1,200),200);
-	      *sep = 0;
-	      if ( (p=search_domnode(domain_list, s)) == NULL) {
+    case 'm': {
+      if (strcmp(optarg, "off") == 0) master_onoff = 0;
+      else strncpy(master_config, optarg, sizeof(master_config));
+      break;
+    }
+#endif
+    case 'M': {
+      max_sockets = atoi(optarg);
+      log_debug(1, "Setting maximum number of open sockets to %i",
+          max_sockets);
+      break;
+    }
+    case 'r': {
+      if ((reactivate_interval = atoi(optarg)))
+        log_debug(1, "Setting retry interval to %i seconds.",
+      reactivate_interval);
+      else
+        log_debug(1, "Retry=0. Will never deactivate servers.");
+      break;
+    }
+    case 's': {
+      domnode_t *p;
+      char *s,*sep = strchr(optarg, (int)':');
+
+      if (sep) { /* is a domain specified? */
+        s = make_cname(strnlwr(sep+1,200),200);
+        *sep = 0;
+        if ( (p=search_domnode(domain_list, s)) == NULL) {
           p=add_domain(domain_list, load_balance, s, 200);
           log_debug(1, "Added domain %s %s load balancing", sep+1,
               load_balance ? "with" : "without");
-	      } else {
+        } else {
           free(s);
-	      }
-	    } else {
+        }
+      } else {
         p=domain_list;
         if (!add_srv(last_srvnode(p->srvlist), optarg)) {
           log_msg(LOG_ERR, "%s: Bad ip address \"%s\"\n",
@@ -346,68 +347,68 @@ int parse_args(int argc, char **argv)
             cname2asc(p->domain));
         }
       }
-	    if (sep) *sep = ':';
-	    break;
-	  }
-	case 'S': {
-		char *p = strrchr(optarg, '+');
-		if (p) {
-			stats_reset = 0;
-			*p = '\0';
-		}
-		stats_interval = atoi(optarg);
-		break;
-	}
-	  case 't': {
-	    if ((forward_timeout = atoi(optarg)))
-	      log_debug(1, "Setting timeout value to %i seconds.", 
-			forward_timeout);
-	    else 
-	      log_debug(1, "Timeout=0. Servers will never timeout.");
-	    break;
-	  }
+      if (sep) *sep = ':';
+      break;
+    }
+  case 'S': {
+    char *p = strrchr(optarg, '+');
+    if (p) {
+      stats_reset = 0;
+      *p = '\0';
+    }
+    stats_interval = atoi(optarg);
+    break;
+  }
+    case 't': {
+      if ((forward_timeout = atoi(optarg)))
+        log_debug(1, "Setting timeout value to %i seconds.",
+      forward_timeout);
+      else
+        log_debug(1, "Timeout=0. Servers will never timeout.");
+      break;
+    }
 #ifndef __CYGWIN__ /** { **/
-	  case 'u': {
-		  strncpy(dnrd_user, optarg, sizeof(dnrd_user));
-			break;
-	  }
-			/*
-	  case 'g': {
-		  strncpy(dnrd_group, optarg, sizeof(dnrd_group));
-			break;
-			} */
+    case 'u': {
+      strncpy(dnrd_user, optarg, sizeof(dnrd_user));
+      break;
+    }
+      /*
+    case 'g': {
+      strncpy(dnrd_group, optarg, sizeof(dnrd_group));
+      break;
+      } */
 #endif /** } __CYGWIN__ **/
-	  case 'v': {
-	      printf("dnrd version %s\n\n", version);
-	      exit(0);
-	      break;
-	  }
+    case 'v': {
+        printf("dnrd version %s\n\n", version);
+        exit(0);
+        break;
+    }
 
-	  case 'R': {
-	    strncpy(dnrd_root, optarg, sizeof(dnrd_root));
-	    log_debug(1, "Using %s as chroot", dnrd_root);
-	    break;
-	  }
-	  case ':': {
-	      log_msg(LOG_ERR, "%s: Missing parameter for \"%s\"\n",
-		      progname, argv[optind]);
-	      exit(-1);
-	      break;
-	  }
-	  case '?':
-	  default: {
-	      /* getopt_long will print "unrecognized option" for us */
-	      give_help();
-	      exit(-1);
-	      break;
-	  }
-	}
+    case 'R': {
+      strncpy(dnrd_root, optarg, sizeof(dnrd_root));
+      log_debug(1, "Using %s as chroot", dnrd_root);
+      break;
+    }
+    case ':': {
+        log_msg(LOG_ERR, "%s: Missing parameter for \"%s\"\n",
+          progname, argv[optind]);
+        exit(-1);
+        break;
+    }
+    case '?':
+    default: {
+        /* getopt_long will print "unrecognized option" for us */
+        give_help();
+        exit(-1);
+        break;
+    }
+  }
     }
 
     if (optind != argc) {
-	log_msg(LOG_ERR, "%s: Unknown parameter \"%s\"\n",
-		progname, argv[optind]);
-	exit(-1);
+      log_msg(LOG_ERR, "%s: Unknown parameter \"%s\"\n",
+        progname, argv[optind]);
+      exit(-1);
     }
     return optind;
 }

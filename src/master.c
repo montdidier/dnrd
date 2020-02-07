@@ -50,11 +50,11 @@
 #define	PACKET_ASSEMBLYSIZE	600
 #define	ARPADOMAIN		".in-addr.arpa"
 
-#define	DNS_TYPE_A      1
-#define	DNS_TYPE_NS     2
+#define DNS_TYPE_A      1
+#define DNS_TYPE_NS     2
 #define DNS_TYPE_CNAME  5
-#define	DNS_TYPE_PTR    12
-#define	DNS_TYPE_MX     15
+#define DNS_TYPE_PTR    12
+#define DNS_TYPE_MX     15
 #define DNS_TYPE_TXT    16
 #define DNS_TYPE_AAAA   28
 

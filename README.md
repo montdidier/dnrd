@@ -43,7 +43,7 @@ Download
 -------------------------
 Latest release of dnrd is [2.20.4](https://github.com/montdidier/dnrd/releases/download/2.20.4/dnrd-2.20.4.tar.gz).
 
-Use Github's release system to get [other versions](https://github.com/montidider/dnrd/releases).
+Use Github's release system to get [other versions](https://github.com/montdidier/dnrd/releases).
 The last few version's tarballs have been migrated from the original
 SourceForge project.
 

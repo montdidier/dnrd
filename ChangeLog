@@ -1,6 +1,6 @@
 version 2.20.4
 --------------
-Chris Kruger
+Chris Kruger <montdidier@users.noreply.github.com>
  - fixed bugs preventing execution on Apple OSX 10.9 and above
 
 Benjamin Petrin <github.com@petrin.me>

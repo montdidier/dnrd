@@ -58,5 +58,7 @@ Otherwise, use DNRD :)
 
 Author
 ------
-The original version of dnrd was written by [Brad Garcia](mailto:garsh@home.com).
+The original version of dnrd was written by [Brad Garcia](mailto:garsh@home.com). Other
+contributors can be viewed in the ChangeLog file.
+
 The current maintainer is [Chris Kruger](https://github.com/montdidier)

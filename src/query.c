@@ -61,7 +61,7 @@ void query_init() {
 query_t *query_create(domnode_t *d, srvnode_t *s) {
   query_t *q;
 #ifdef RANDOM_SRC
-  struct sockaddr_in my_addr;
+  struct sockaddr_in6 my_addr;
 #endif
 
   /* should never be called with no server */
@@ -91,7 +91,7 @@ query_t *query_create(domnode_t *d, srvnode_t *s) {
   q->ttl = forward_timeout;
   
   /* open a new socket */
-  if ((q->sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  if ((q->sock = socket(PF_INET6, SOCK_DGRAM, 0)) < 0) {
     log_msg(LOG_ERR, "query_create: Couldn't open socket");
     free(q);
     return NULL;
@@ -100,20 +100,17 @@ query_t *query_create(domnode_t *d, srvnode_t *s) {
   /* bind to random source port */
 #ifdef RANDOM_SRC
   memset(&my_addr, 0, sizeof(my_addr));
-  my_addr.sin_family = AF_INET;
-  my_addr.sin_addr.s_addr = INADDR_ANY;
-
-  my_addr.sin_port = htons(myrand(65536-1026) + 1025);
-  while ((bind(q->sock, (struct sockaddr *)&my_addr, 
-      sizeof(struct sockaddr))) == -1) {
-
+  my_addr.sin6_family = AF_INET6;
+  my_addr.sin6_addr = in6addr_any;
+  my_addr.sin6_port = htons(myrand(65536-1026) + 1025);
+  while ((bind(q->sock, (struct sockaddr *)&my_addr, sizeof(my_addr))) == -1) {
     if (errno != EADDRINUSE) {
       log_msg(LOG_WARNING, "bind: %s", strerror(errno));
       break;
     }
 
     /* try another port */
-    my_addr.sin_port = htons(myrand(65535-1026) + 1025);
+    my_addr.sin6_port = htons(myrand(65535-1026) + 1025);
   }
 #endif
 
@@ -157,7 +154,7 @@ query_t *query_get_new(domnode_t *dom, srvnode_t *srv) {
 
 /* get qid, rewrite and add to list. Retruns the query before the added  */
 query_t *query_add(domnode_t *dom, srvnode_t *srv, 
-		   const struct sockaddr_in* client, char* msg, 
+		   const struct sockaddr_in6* client, unsigned char* msg,
 		   unsigned len) {
 
   query_t *q, *p, *oldtail;
@@ -170,16 +167,16 @@ query_t *query_add(domnode_t *dom, srvnode_t *srv,
   */
   for (p=&qlist; p->next != &qlist; p = p->next) {
     if ((p->next->client_qid == client_qid) &&
-        ((p->next->client.sin_addr.s_addr == client->sin_addr.s_addr) &&
-         (p->next->client.sin_port == client->sin_port))) {
+        ((p->next->client.sin6_addr.s6_addr == client->sin6_addr.s6_addr) &&
+         (p->next->client.sin6_port == client->sin6_port))) {
 
       char client_ip[INET_ADDRSTRLEN];
 
-      inet_ntop(AF_INET, &(client->sin_addr), client_ip, sizeof(*client));
+      inet_ntop(AF_INET6, &(client->sin6_addr), client_ip, sizeof(*client));
 
       log_debug(2, "Query ID %hu from client %s:%hu already in list. "
         "Count=%hu", 
-               ntohs(client_qid), client_ip, ntohs(client->sin_port),
+               ntohs(client_qid), client_ip, ntohs(client->sin6_port),
         p->next->client_count++);
 
       dump_dnspacket("duplicate query", (unsigned char *)msg, len);
@@ -197,7 +194,7 @@ query_t *query_add(domnode_t *dom, srvnode_t *srv,
   }
 
   q->client_qid = client_qid;
-  memcpy(&(q->client), client, sizeof(struct sockaddr_in));
+  memcpy(&(q->client), client, sizeof(struct sockaddr_in6));
   q->client_time = now;
   q->client_count = 1;
 
@@ -264,8 +261,10 @@ int query_count(void) {
 void query_dump_list(void) {
   query_t *p;
   for (p=&qlist; p->next != &qlist; p=p->next) {
+    char ipv6addrstr[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, &p->next->srv->addr.sin6_addr, ipv6addrstr, INET6_ADDRSTRLEN);
     log_debug(2, "srv=%s, myqid=%i, client_qid=%i", 
-	      inet_ntoa(p->next->srv->addr.sin_addr), p->next->my_qid, 
+	      ipv6addrstr, p->next->my_qid, 
 	      p->next->client_qid);
   }
 }

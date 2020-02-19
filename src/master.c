@@ -42,16 +42,20 @@
 #include "dns.h"
 #include "lib.h"
 #include "master.h"
+#include "ipaddr.h"
 
 #define	MASTER_CONFIG		"master"
 #define MASTER_BLACKLIST        "blacklist"
 #define	PACKET_ASSEMBLYSIZE	600
 #define	ARPADOMAIN		".in-addr.arpa"
 
-#define	DNS_TYPE_A		1
-#define	DNS_TYPE_NS		2
-#define	DNS_TYPE_PTR		12
-#define	DNS_TYPE_MX		15
+#define DNS_TYPE_A      1
+#define DNS_TYPE_NS     2
+#define DNS_TYPE_CNAME  5
+#define DNS_TYPE_PTR    12
+#define DNS_TYPE_MX     15
+#define DNS_TYPE_TXT    16
+#define DNS_TYPE_AAAA   28
 
 #define	DEFAULT_TTL		(60 * 60)
 
@@ -60,11 +64,9 @@ typedef struct _string {
     char	*string;
 } string_t;
 
-
-
 typedef struct _nameip {
-    string_t	arpa;
-    unsigned long ipnum;
+    string_t	      arpa;
+    struct in6_addr ipnum;
 } nameip_t;
 
 /*
@@ -84,15 +86,15 @@ typedef struct _dnsrec {
     string_t	object;
 
     union {
-	nameip_t	nameip;
-	string_t	dns;
+      nameip_t	nameip;
+      string_t	dns;
     } u;
 } dnsrec_t;
 
 unsigned char master_reload	= 0;
 int master_onoff		= 1;
-char master_config[256]		= MASTER_CONFIG;
-char blacklist[256]             = MASTER_BLACKLIST;
+char master_config[NAME_MAX]	= MASTER_CONFIG;
+char blacklist[NAME_MAX]      = MASTER_BLACKLIST;
 
 static int master_initialised	= 0;
 
@@ -128,24 +130,29 @@ static char *mkstring(string_t *string, const char *name, const int maxlen)
  */
 static int create_nameip(nameip_t *nameip, const int maxnamelen, char *ip)
 {
-    struct in_addr ipnum;
+    struct in6_addr ipnum;
+    char ip6addrstr[INET6_ADDRSTRLEN];
 
-    if (inet_aton(ip, &ipnum) == 0) {
-	log_msg(LOG_NOTICE, "invalid ip number: %s", ip);
-	return (0);
+    if (inet_pton(AF_INET, ip, &ipnum) == 0) {
+      log_msg(LOG_NOTICE, "invalid ip number: %s", ip);
+      return (0);
     }
 
-    nameip->ipnum = ntohl(ipnum.s_addr);
+    nameip->ipnum = ipnum;
+
     // Swap the bytes.  Don't assume 32-bit integers.
-    if (nameip->ipnum == ipnum.s_addr)
-        ipnum.s_addr = (((nameip->ipnum & 0xff000000) >> 24) |
+    if (memcmp(&nameip->ipnum, &ipnum, sizeof(ipnum)) == 0) {
+        /* FIXME ipnum.s6_addr = nameip->ipnum; */
+    } else {
+        /* FIXME
+        ipnum.s6_addr = (((nameip->ipnum & 0xff000000) >> 24) |
 		        ((nameip->ipnum & 0x00ff0000) >> 8 ) |
 		        ((nameip->ipnum & 0x0000ff00) << 8 ) |
 		        ((nameip->ipnum & 0x000000ff) << 24));
-    else
-        ipnum.s_addr = nameip->ipnum;
+        */
+    }
 
-    mkstring(&nameip->arpa, inet_ntoa(ipnum), maxnamelen);
+    mkstring(&nameip->arpa, inet_ntop(AF_INET6, &ipnum, ip6addrstr, INET6_ADDRSTRLEN), maxnamelen);
     
     return (DNS_NAMEIP);
 }
@@ -159,23 +166,23 @@ static int free_dnsrec(dnsrec_t *rec)
 {
     switch (rec->type) {
       case DNS_NAMEIP:
-	  free(rec->u.nameip.arpa.string);
-	  break;
+        free(rec->u.nameip.arpa.string);
+        break;
 
       case DNS_DNS:
-	  free(rec->u.dns.string);
-	  break;
+        free(rec->u.dns.string);
+        break;
 
       case DNS_AUTHORITY:	/* No allocated memory. */
-	  break;
+        break;
 	    
       case 0: /* This is allowed. Assume that the data part is not used. */
-	  break;
+        break;
 
       default:
-	  log_msg(LOG_ALERT, "unknown DNS record type: %d "
-		 "-- expect memory leaks", rec->type);
-	  break;
+        log_msg(LOG_ALERT, "unknown DNS record type: %d "
+          "-- expect memory leaks", rec->type);
+        break;
     }
 
     free(rec->object.string);
@@ -229,7 +236,7 @@ static int reset_master(void)
 static dnsrec_t *add_record(dnsrec_t *rec)
 {
     if (dbc >= dbmax) {
-	dbv = reallocate(dbv, (dbmax += 10) * sizeof(dnsrec_t));
+      dbv = reallocate(dbv, (dbmax += 10) * sizeof(dnsrec_t));
     }
 
     dbv[dbc++] = rec;
@@ -242,8 +249,8 @@ static dnsrec_t *add_nameip(char *name, const int maxlen, char *ipnum)
     
     rec = alloc_dnsrec(name, maxlen);
     if ((rec->type = create_nameip(&rec->u.nameip, maxlen, ipnum)) != 0) {
-	add_record(rec);
-	return (rec);
+      add_record(rec);
+      return (rec);
     }
 
     free_dnsrec(rec);
@@ -288,15 +295,15 @@ char *get_hostname(char **from, char *domain, char *name, int size)
     *name = 0;
     size -= 2;
     if (*get_word(from, word, sizeof(word)) == 0) {
-	return (name);
+      return (name);
     }
 
     if (*word == '+') {	/* Not a hostname but an option. */
-	copy_string(name, word, size);
+      copy_string(name, word, size);
     }
     else if ((len = strnlen(word, sizeof(word))) > 0  &&  word[len-1] == '+') {
-	word[len-1] = 0;
-	snprintf (name, size, "%s%s%s", word, domain[0] ? "." : "", domain);
+      word[len-1] = 0;
+      snprintf (name, size, "%s%s%s", word, domain[0] ? "." : "", domain);
     }
     /* patch from maillinglist
        http://groups.yahoo.com/group/dnrd/message/231 
@@ -309,12 +316,11 @@ char *get_hostname(char **from, char *domain, char *name, int size)
       size--;
       copy_string(name, word, size);
     }
-
     else if (strchr(word, '.') == NULL) {
-	snprintf (name, size, "%s%s%s", word, domain[0] ? "." : "", domain);
+      snprintf (name, size, "%s%s%s", word, domain[0] ? "." : "", domain);
     }
     else {
-	copy_string(name, word, size);
+      copy_string(name, word, size);
     }
 
     return (name);
@@ -327,8 +333,8 @@ int read_hosts(char *filename, char *domain)
     FILE	*fp;
     
     if ((fp = fopen(filename, "r")) == NULL) {
-	log_msg(LOG_ERR, "can't open file: %s", filename);
-	return (1);
+      log_msg(LOG_ERR, "can't open file: %s", filename);
+      return (1);
     }
 
     log_debug(1, "Reading hosts from %s/%s, domain= %s", dnrd_root,
@@ -336,20 +342,20 @@ int read_hosts(char *filename, char *domain)
 
     count = dbc;
     while (fgets(line, sizeof(line), fp) != NULL) {
-	p = skip_ws((char *)noctrln(line, sizeof(line)));
-	if (*p == 0  ||  *p == '#') continue;
+      p = skip_ws((char *)noctrln(line, sizeof(line)));
+      if (*p == 0  ||  *p == '#') continue;
 
-	if (isdigit((int)(*p))) {
+      if (isdigit((int)(*p))) {
 	    /*
 	     * Usual hosts records start with an IP number.  This
 	     * might be followed by one or more names.  Every
 	     * name makes one DNS record.
 	     */
-	    get_word(&p, ipnum, sizeof(ipnum));
-	    while (*get_hostname(&p, domain, word, sizeof(word)) != 0) {
-		add_nameip(word, sizeof(word), ipnum);
-	    }
-	}
+        get_word(&p, ipnum, sizeof(ipnum));
+        while (*get_hostname(&p, domain, word, sizeof(word)) != 0) {
+          add_nameip(word, sizeof(word), ipnum);
+        }
+      }
     }
 	    
     fclose (fp);
@@ -366,8 +372,8 @@ int read_configuration(char *filename)
     FILE *fp;
     
     if ((fp = fopen(filename, "r")) == NULL) {
-	log_debug(1, "no master configuration: %s", filename);
-	return (1);
+      log_debug(1, "no master configuration: %s", filename);
+      return (1);
     }
 
     count = dbc;
@@ -508,12 +514,12 @@ static dnsrec_t *authority_lookup(char *domain)
 
     code = get_stringcode(domain);
     for (i = dbc-1; i >= 0; i--) {
-	rec = dbv[i];
-	if ((rec->type == DNS_AUTHORITY)  &&
-	    (rec->object.code == code)  &&
-	    (strcmp(rec->object.string, domain) == 0)) {
-	    return (rec);
-	}
+      rec = dbv[i];
+      if ((rec->type == DNS_AUTHORITY)  &&
+        (rec->object.code == code)  &&
+        (strcmp(rec->object.string, domain) == 0)) {
+        return (rec);
+      }
     }
 	    
     return (NULL);
@@ -592,11 +598,11 @@ static int end_rdata(dnsheader_t *x)
     unsigned short int conv;
 
     if (x->rdata != NULL) {
-	int	rsize;
+      int	rsize;
 
-	rsize = x->here - (x->rdata + 2);
-	conv = htons((unsigned short int) rsize);
-	memcpy(x->rdata, &conv, 2);
+      rsize = x->here - (x->rdata + 2);
+      conv = htons((unsigned short int) rsize);
+      memcpy(x->rdata, &conv, 2);
     }
     
     x->rdata = NULL;
@@ -634,8 +640,8 @@ static dnsheader_t *begin_assembly(rr_t *query)
     static dnsheader_t *x = NULL;
 
     if (x == NULL) {
-	x = allocate(sizeof(dnsheader_t));
-	x->packet = allocate(PACKET_ASSEMBLYSIZE);
+      x = allocate(sizeof(dnsheader_t));
+      x->packet = allocate(PACKET_ASSEMBLYSIZE);
     }
 
     /*
@@ -674,21 +680,21 @@ static int compile_dnsrecords(dnsheader_t *x, char *object)
     last = -1;
     pos = 0;
     while ((rec = dns_lookup(object, &last)) != NULL) {
-	if (pos == 0) {
-	    pos = compile_name(x, rec->object.string);
-	}
-	else {
-	    compile_namepointer(x, pos);
-	}
+      if (pos == 0) {
+        pos = compile_name(x, rec->object.string);
+      }
+      else {
+        compile_namepointer(x, pos);
+      }
 
-	compile_int(x, DNS_TYPE_NS);
-	compile_int(x, DNS_CLASS_INET);
-	compile_long(x, DEFAULT_TTL);
-	start_rdata(x);
-	compile_name(x, rec->u.dns.string);
-	end_rdata(x);
+      compile_int(x, DNS_TYPE_NS);
+      compile_int(x, DNS_CLASS_INET);
+      compile_long(x, DEFAULT_TTL);
+      start_rdata(x);
+      compile_name(x, rec->u.dns.string);
+      end_rdata(x);
 
-	x->nscount++;
+	    x->nscount++;
     }
 
     if (x->nscount > 0) SET_AA(x->u, 1);
@@ -731,8 +737,8 @@ int read_blacklist(const char *filename) {
 int master_init(void)
 {
     if (master_onoff == 0) {
-	log_msg(LOG_NOTICE, "local DNS master turned off");
-	return (0);
+      log_msg(LOG_NOTICE, "local DNS master turned off");
+      return (0);
     }
     log_debug(1, "initialising master DNS database");
 
@@ -795,107 +801,110 @@ int master_lookup(unsigned char *msg, int len)
 
 
     if (master_initialised == 0) {
-	master_init();
+      master_init();
     }
 
     if (parse_query(&query, msg, len) ||
-	(query.class != DNS_CLASS_INET  ||  GET_OPCODE(query.flags) != 0)) {
-	return (0);
+      (query.class != DNS_CLASS_INET  ||  GET_OPCODE(query.flags) != 0)) {
+      return (0);
     }
 
     if (query.type == DNS_TYPE_PTR) {
-	int	k, len;
+      int	k, len;
 
-	len = strlen(query.name);
-	k = len - strlen(ARPADOMAIN);
-	if (k < 0  ||  strcmp(&query.name[k], ARPADOMAIN) != 0) {
-	    return (0);
-	}
+      len = strlen(query.name);
+      k = len - strlen(ARPADOMAIN);
+      if (k < 0  ||  strcmp(&query.name[k], ARPADOMAIN) != 0) {
+          return (0);
+      }
 
-	query.name[k] = 0;
-	if ((rec = ptr_lookup(query.name)) != NULL) {
-	    dnsheader_t *x;
-	    
-	    query.name[k] = '.';
-	    log_debug(2, "master: found PTR %s\n", query.name);
+      query.name[k] = 0;
+      if ((rec = ptr_lookup(query.name)) != NULL) {
+          dnsheader_t *x;
 
-	    x = begin_assembly(&query);
-	    compile_objectname(x);
-	    compile_int(x, DNS_TYPE_PTR);
-	    compile_int(x, DNS_CLASS_INET);
-	    compile_long(x, DEFAULT_TTL);
-	    start_rdata(x);
-	    compile_name(x, rec->object.string);
-	    end_rdata(x);
+          query.name[k] = '.';
+          log_debug(2, "master: found PTR %s\n", query.name);
 
-	    compile_dnsrecords(x, query.name);
+          x = begin_assembly(&query);
+          compile_objectname(x);
+          compile_int(x, DNS_TYPE_PTR);
+          compile_int(x, DNS_CLASS_INET);
+          compile_long(x, DEFAULT_TTL);
+          start_rdata(x);
+          compile_name(x, rec->object.string);
+          end_rdata(x);
 
-	    x->ancount = 1;
-	    end_assembly(x);
+          compile_dnsrecords(x, query.name);
 
-	    dump_dnspacket("assembled", x->packet, x->len);
+          x->ancount = 1;
+          end_assembly(x);
 
-	    memcpy(msg + 2, x->packet + 2, x->len - 2);
-	    return (x->len);
-	}
+          dump_dnspacket("assembled", x->packet, x->len);
 
-	/* Repair query for later authority lookup. */
-	query.name[k] = '.';
+          memcpy(msg + 2, x->packet + 2, x->len - 2);
+          return (x->len);
+      }
+
+      /* Repair query for later authority lookup. */
+      query.name[k] = '.';
     }
     else if (query.type == DNS_TYPE_A) {
-	if ((rec = name_lookup(query.name)) != NULL) {
-	    dnsheader_t *x;
-	    
-	    x = begin_assembly(&query);
-	    compile_objectname(x);
-	    compile_int(x, DNS_TYPE_A);
-	    compile_int(x, DNS_CLASS_INET);
-	    compile_long(x, DEFAULT_TTL);
-	    start_rdata(x);
-	    compile_long(x, rec->u.nameip.ipnum);
-	    end_rdata(x);
-	    
-	    compile_dnsrecords(x, query.name);
+      if ((rec = name_lookup(query.name)) != NULL) {
+          dnsheader_t *x;
+          struct in_addr sin_addr;
 
-	    x->ancount = 1;
-	    end_assembly(x);
+          ipv4_mapped_unpack(&sin_addr, &rec->u.nameip.ipnum);
 
-	    dump_dnspacket("assembled", x->packet, x->len);
+          x = begin_assembly(&query);
+          compile_objectname(x);
+          compile_int(x, DNS_TYPE_A);
+          compile_int(x, DNS_CLASS_INET);
+          compile_long(x, DEFAULT_TTL);
+          start_rdata(x);
+          compile_long(x, ntohl(sin_addr.s_addr));
+          end_rdata(x);
 
-	    memcpy(msg + 2, x->packet + 2, x->len - 2);
-	    return (x->len);
-	}
+          compile_dnsrecords(x, query.name);
+
+          x->ancount = 1;
+          end_assembly(x);
+
+          dump_dnspacket("assembled", x->packet, x->len);
+
+          memcpy(msg + 2, x->packet + 2, x->len - 2);
+          return (x->len);
+      }
     }
     else if (query.type == DNS_TYPE_NS) {
-	int	last;
+      int	last;
 
-	last = -1;
-	if ((rec = dns_lookup(query.name, &last)) != NULL) {
-	    dnsheader_t *x;
-	    
-	    x = begin_assembly(&query);
-	    while (rec != NULL) {
-		compile_objectname(x);
-		compile_int(x, DNS_TYPE_NS);
-		compile_int(x, DNS_CLASS_INET);
-		compile_long(x, DEFAULT_TTL);
+      last = -1;
+      if ((rec = dns_lookup(query.name, &last)) != NULL) {
+          dnsheader_t *x;
 
-		start_rdata(x);
-		compile_name(x, rec->u.dns.string);
-		end_rdata(x);
-		
-		x->ancount++;
-		rec = dns_lookup(query.name, &last);
-	    }
+          x = begin_assembly(&query);
+          while (rec != NULL) {
+        compile_objectname(x);
+        compile_int(x, DNS_TYPE_NS);
+        compile_int(x, DNS_CLASS_INET);
+        compile_long(x, DEFAULT_TTL);
 
-	    SET_AA(x->u, 1);
-	    end_assembly(x);
+        start_rdata(x);
+        compile_name(x, rec->u.dns.string);
+        end_rdata(x);
 
-	    dump_dnspacket("assembled", x->packet, x->len);
+        x->ancount++;
+        rec = dns_lookup(query.name, &last);
+          }
 
-	    memcpy(msg + 2, x->packet + 2, x->len - 2);
-	    return (x->len);
-	}
+          SET_AA(x->u, 1);
+          end_assembly(x);
+
+          dump_dnspacket("assembled", x->packet, x->len);
+
+          memcpy(msg + 2, x->packet + 2, x->len - 2);
+          return (x->len);
+      }
     }
     else {
 	/*
@@ -903,7 +912,7 @@ int master_lookup(unsigned char *msg, int len)
 	 * by the master.
 	 */
 
-	return (0);
+      return (0);
     }
 
     /*
@@ -914,25 +923,25 @@ int master_lookup(unsigned char *msg, int len)
      */
 
     if ((domain = strchr(query.name, '.')) == NULL) {
-	return (0);
+      return (0);
     }
 
     domain++;
     if ((authority_lookup(query.name) != NULL) 
-	||  (authority_lookup(domain) != NULL)) {
-	dnsheader_t *x;
+      ||  (authority_lookup(domain) != NULL)) {
+      dnsheader_t *x;
 
-	log_debug(2, "master: found AUTHORITY for %s\n", query.name);
+      log_debug(2, "master: found AUTHORITY for %s\n", query.name);
 
-	x = begin_assembly(&query);
-	x->ancount = 0;
-	SET_AA(x->u, 1);
-	end_assembly(x);
+      x = begin_assembly(&query);
+      x->ancount = 0;
+      SET_AA(x->u, 1);
+      end_assembly(x);
 
-	dump_dnspacket("assembled", x->packet, x->len);
+      dump_dnspacket("assembled", x->packet, x->len);
 
-	memcpy(msg + 2, x->packet + 2, x->len - 2);
-	return (x->len);
+      memcpy(msg + 2, x->packet + 2, x->len - 2);
+      return (x->len);
     }
 
     return (0);
@@ -956,14 +965,14 @@ int master_dontknow(unsigned char *msg, int len, unsigned char *answer)
 
 
     if (master_initialised == 0) {
-	master_init();
+      master_init();
     }
 
     if (parse_query(&query, msg, len)) {
-	return (0);
+      return (0);
     }
     else if (query.class != DNS_CLASS_INET  ||  GET_OPCODE(query.flags) != 0) {
-	return (0);
+      return (0);
     }
 
     x = begin_assembly(&query);

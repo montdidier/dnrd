@@ -31,6 +31,7 @@
 #include <string.h>
 #include <time.h>
 #include <assert.h>
+#include <netdb.h>
 #include "common.h"
 #include "relay.h"
 #include "cache.h"
@@ -57,14 +58,16 @@ static int udp_send(int sock, srvnode_t *srv, void *msg, int len)
     time_t now = time(NULL);
     rc = sendto(sock, msg, len, 0,
 		(const struct sockaddr *) &srv->addr,
-		sizeof(struct sockaddr_in));
+		sizeof(struct sockaddr_in6));
 
     if (rc != len) {
-	log_msg(LOG_ERR, "sendto error: %s: ",
-		inet_ntoa(srv->addr.sin_addr), strerror(errno));
-	return (rc);
+      char ip6addrstr[INET6_ADDRSTRLEN];
+      log_msg(LOG_ERR, "sendto error: %s: ", inet_ntop(AF_INET6, &srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), strerror(errno));
+      return (rc);
     }
-    if ((srv->send_time == 0)) srv->send_time = now;
+    if (srv->send_time == 0) {
+       srv->send_time = now;
+    }
     srv->send_count++;
     return (rc);
 }
@@ -98,19 +101,19 @@ query_t *udp_handle_request()
     unsigned           addr_len;
     int                len;
     const int          maxsize = UDP_MAXSIZE;
-    static char        msg[UDP_MAXSIZE+4];
-    struct sockaddr_in from_addr;
+    unsigned char      msg[UDP_MAXSIZE+4];
+    struct sockaddr_in6 from_addr;
     int                fwd;
     domnode_t          *dptr;
     query_t *q, *prev;
 
     /* Read in the message */
-    addr_len = sizeof(struct sockaddr_in);
+    addr_len = sizeof(struct sockaddr_in6);
     len = recvfrom(isock, msg, maxsize, 0,
 		   (struct sockaddr *)&from_addr, &addr_len);
     if (len < 0) {
-	log_debug(1, "recvfrom error %s", strerror(errno));
-	return NULL;
+      log_debug(1, "recvfrom error %s", strerror(errno));
+      return NULL;
     }
 
     /* do some basic checking */
@@ -122,11 +125,11 @@ query_t *udp_handle_request()
 
     /* If we already know the answer, send it and we're done */
     if (fwd == 0) {
-	if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
-		   addr_len) != len) {
-	    log_debug(1, "sendto error %s", strerror(errno));
-	}
-	return NULL;
+      if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
+           addr_len) != len) {
+          log_debug(1, "sendto error %s", strerror(errno));
+      }
+      return NULL;
     }
 
 
@@ -153,7 +156,7 @@ query_t *udp_handle_request()
       /* we couldn't send the query */
 #ifndef EXCLUDE_MASTER
       int	packetlen;
-      char	packet[maxsize+4];
+      unsigned char	packet[maxsize+4];
 
       /*
        * If we couldn't send the packet to our DNS servers,
@@ -168,13 +171,13 @@ query_t *udp_handle_request()
        */
       
       if ((packetlen = master_dontknow(msg, len, packet)) > 0) {
-	query_delete_next(prev);
-	return NULL;
-	if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
-		   addr_len) != len) {
-	  log_debug(1, "sendto error %s", strerror(errno));
-	  return NULL;
-	}
+        query_delete_next(prev);
+        return NULL;
+        if (sendto(isock, msg, len, 0, (const struct sockaddr *)&from_addr,
+             addr_len) != len) {
+          log_debug(1, "sendto error %s", strerror(errno));
+          return NULL;
+        }
       }
 #endif
     }
@@ -190,30 +193,31 @@ query_t *udp_handle_request()
  * Returns:  A positove number indicating of the bytes received, -1 on a
  *           recvfrom error and 0 if the received message is too large.
  */
-static int reply_recv(query_t *q, void *msg, int len)
+static int reply_recv(query_t *q, void *msg, size_t len)
 {
-    int	rc, fromlen;
-    struct sockaddr_in from;
+    int	rc; 
+    socklen_t fromlen;
+    struct sockaddr_in6 from;
+    char ip6addrstr[INET6_ADDRSTRLEN];
 
-    fromlen = sizeof(struct sockaddr_in);
+    fromlen = sizeof(struct sockaddr_in6);
     rc = recvfrom(q->sock, msg, len, 0,
 		  (struct sockaddr *) &from, &fromlen);
 
     if (rc == -1) {
-	log_msg(LOG_ERR, "recvfrom error: %s",
-		inet_ntoa(q->srv->addr.sin_addr));
-	return (-1);
+      log_msg(LOG_ERR, "recvfrom error: %s",
+        inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (-1);
+    } else if (rc > len) {
+      log_msg(LOG_NOTICE, "packet too large: %s",
+        inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (0);
     }
-    else if (rc > len) {
-	log_msg(LOG_NOTICE, "packet too large: %s",
-		inet_ntoa(q->srv->addr.sin_addr));
-	return (0);
-    }
-    else if (memcmp(&from.sin_addr, &q->srv->addr.sin_addr,
-		    sizeof(from.sin_addr)) != 0) {
-	log_msg(LOG_WARNING, "unexpected server: %s",
-		inet_ntoa(from.sin_addr));
-	return (0);
+    else if (memcmp(&from.sin6_addr, &q->srv->addr.sin6_addr,
+		    sizeof(from.sin6_addr)) != 0) {
+      log_msg(LOG_WARNING, "unexpected server: %s",
+        inet_ntop(AF_INET6, &from.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+      return (0);
     }
 
     return (rc);
@@ -231,18 +235,17 @@ static int reply_recv(query_t *q, void *msg, int len)
 void udp_handle_reply(query_t *prev)
 {
   //    const int          maxsize = 512; /* According to RFC 1035 */
-    static char        msg[UDP_MAXSIZE+4];
-    int                len;
-    unsigned           addr_len;
+    unsigned char  msg[UDP_MAXSIZE+4];
+    int            len;
+    unsigned       addr_len;
     query_t *q = prev->next;
 
     log_debug(3, "handling socket %i", q->sock);
-    if ((len = reply_recv(q, msg, UDP_MAXSIZE)) < 0)
-      {
-	log_debug(1, "dnsrecv failed: %i", len);
-	query_delete_next(prev);
-	return; /* recv error */
-      }
+    if ((len = reply_recv(q, msg, UDP_MAXSIZE)) < 0) {
+      log_debug(1, "dnsrecv failed: %i", len);
+      query_delete_next(prev);
+      return; /* recv error */
+    }
     
     /* do basic checking */
     if (check_reply(q->srv, msg, len) < 0) {
@@ -252,23 +255,25 @@ void udp_handle_reply(query_t *prev)
     }
 
     if (opt_debug) {
-	char buf[256];
-	snprintf_cname(msg, len, 12, buf, sizeof(buf));
-	log_debug(3, "Received DNS reply for \"%s\"", buf);
+      char buf[NI_MAXHOST];
+      snprintf_cname(msg, len, 12, buf, sizeof(buf));
+      log_debug(3, "Received DNS reply for \"%s\"", buf);
     }
 
     dump_dnspacket("reply", msg, len);
-    addr_len = sizeof(struct sockaddr_in);
+    addr_len = sizeof(struct sockaddr_in6);
 
     /* was this a dummy reactivate query? */
     if (q->domain != NULL) {
+      char ip6addrstr[INET6_ADDRSTRLEN];
+
       /* no, lets cache the reply and send to client */
       cache_dnspacket(msg, len, q->srv);
 
       /* set the client qid */
       *((unsigned short *)msg) = q->client_qid;
       log_debug(3, "Forwarding the reply to the host %s",
-		inet_ntoa(q->client.sin_addr));
+		inet_ntop(AF_INET6, &q->client.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
       if (sendto(isock, msg, len, 0,
 		 (const struct sockaddr *)&q->client,
 		 addr_len) != len) {
@@ -280,8 +285,11 @@ void udp_handle_reply(query_t *prev)
       
     /* this server is obviously alive, we reset the counters */
     q->srv->send_time = 0;
-    if (q->srv->inactive) log_debug(1, "Reactivating server %s",
-				 inet_ntoa(q->srv->addr.sin_addr));
+    if (q->srv->inactive) {
+      char ip6addrstr[INET6_ADDRSTRLEN];
+      log_debug(1, "Reactivating server %s",
+				 inet_ntop(AF_INET6, &q->srv->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
+    }
     q->srv->inactive = 0;
     /* remove query from list and destroy it */
     query_delete_next(prev);
@@ -311,19 +319,20 @@ int udp_send_dummy(srvnode_t *s) {
     /*    0x00, 0x01  */ /* QCLASS: IN */
   };
   query_t *q;
-  struct sockaddr_in srcaddr;
+  struct sockaddr_in6 srcaddr;
 
   /* should not happen */
   assert(s != NULL);
 
   if ((q=query_add(NULL, s, &srcaddr, dnsbuf, sizeof(dnsbuf))) != NULL) {
     int rc;
+    char ip6addrstr[INET6_ADDRSTRLEN];
     q = q->next; /* query add returned the query 1 before in list */
     /* don't let those queries live too long */
     q->ttl = reactivate_interval;
     memset(&srcaddr, 0, sizeof(srcaddr));
     log_debug(2, "Sending dummy id=%i to %s", ((unsigned short *)dnsbuf)[0], 
-	      inet_ntoa(s->addr.sin_addr));
+	      inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
     /*  return dnssend(s, &dnsbuf, sizeof(dnsbuf)); */
     rc=udp_send(q->sock, s, dnsbuf, sizeof(dnsbuf));
     ((unsigned short *)dnsbuf)[0]++;

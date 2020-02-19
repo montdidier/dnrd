@@ -90,7 +90,7 @@ static dnsheader_t *decode_header(void *packet, int len)
     x->nscount = ntohs(p[4]);
     x->arcount = ntohs(p[5]);
 
-		x->here    = (char *) &x->packet[12];
+		x->here    = &x->packet[12];
     return (x);
 }
 
@@ -171,7 +171,7 @@ static int get_objname(const unsigned char *msg, const int msgsize, int index,
 	return (compressed ? compressed : i);
 }
 
-int snprintf_cname(char *msg, const int msgsize, /* the dns packet */
+int snprintf_cname(unsigned char *msg, const int msgsize, /* the dns packet */
 										int index, /* where in the DNS packet the name is */
 										char *dest, int destsize) { /* where to store the cname */
 /*	unsigned char *p = &msg[index];*/ /* UNUSED */

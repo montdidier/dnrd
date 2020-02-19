@@ -41,8 +41,8 @@
 /* Allocate a domain node */
 domnode_t *alloc_domnode(void) {
   domnode_t *p = allocate(sizeof(domnode_t));
-  p->domain=NULL;
-  p->srvlist=alloc_srvnode();
+  p->domain = NULL;
+  p->srvlist = alloc_srvnode();
   /* actually we return a new emty list... */
   return p->next=p;
 }
@@ -54,7 +54,6 @@ domnode_t *alloc_domnode(void) {
 
 domnode_t *init_domainlist(void) {
   domnode_t *p = alloc_domnode();
-  
   return p;
 }
 
@@ -141,7 +140,8 @@ domnode_t *search_domnode(domnode_t *head, const char *name) {
 
 domnode_t *search_subdomnode(domnode_t *head, const char *name, 
 			     const int maxlen) {
-  domnode_t *d=head, *curr=head;
+  domnode_t *d = head;
+  domnode_t *curr = head;
   int h,n, maxfound=0;
   const char *p;
   assert( (head != NULL) && (name != NULL));
@@ -169,13 +169,14 @@ domnode_t *search_subdomnode(domnode_t *head, const char *name,
 srvnode_t *set_current(domnode_t *d, srvnode_t *s) {
   assert(d!=NULL);
   //  if (d == NULL) return NULL;
+  char ip6addrstr[INET6_ADDRSTRLEN];
   if (s) {
     if (d->roundrobin) {
       log_debug(3, "Setting server %s for domain %s",
-		inet_ntoa(s->addr.sin_addr), cname2asc(d->domain));
+		inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), cname2asc(d->domain));
     } else {
       log_msg(LOG_NOTICE, "Setting server %s for domain %s",
-		inet_ntoa(s->addr.sin_addr), cname2asc(d->domain));
+		inet_ntop(AF_INET6, &s->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN), cname2asc(d->domain));
     }
   } else 
     log_msg(LOG_WARNING, "No active servers for domain %s", 
@@ -209,9 +210,10 @@ srvnode_t *next_active(domnode_t *d) {
 srvnode_t *deactivate_current(domnode_t *d) {
   assert(d!=NULL);
   if (d->current) {
+    char ip6addrstr[INET6_ADDRSTRLEN];
     d->current->inactive = time(NULL);
     log_msg(LOG_NOTICE, "Deactivating DNS server %s",
-	      inet_ntoa(d->current->addr.sin_addr));
+	      inet_ntop(AF_INET6, &d->current->addr.sin6_addr, ip6addrstr, INET6_ADDRSTRLEN));
   }
   return set_current(d, next_active(d));
 }

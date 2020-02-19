@@ -39,7 +39,7 @@ typedef struct _query {
 
   unsigned short my_qid; /* the local qid */
   unsigned short client_qid; /* the qid from the client */
-  struct sockaddr_in client; /* */
+  struct sockaddr_in6 client; /* */
 
   /*  int send_count; * number of retries */
   /*  time_t send_time; * time of last sent packet */
@@ -61,7 +61,7 @@ void query_init(void);
 query_t *query_create(domnode_t *d, srvnode_t *s);
 query_t *query_destroy(query_t *q);
 query_t *query_get_new(domnode_t *dom, srvnode_t *srv);
-query_t *query_add(domnode_t *dom, srvnode_t *srv, const struct sockaddr_in* client, char* msg, 
+query_t *query_add(domnode_t *dom, srvnode_t *srv, const struct sockaddr_in6* client, unsigned char* msg, 
 		   unsigned len);
 query_t *query_delete_next(query_t *q);
 void query_timeout(time_t age);

@@ -29,6 +29,6 @@
 void run();
 
 /* Determine what to do with a DNS request */
-int handle_query(const struct sockaddr_in *fromaddrp, char *msg, int *len, domnode_t **dptr);
+int handle_query(const struct sockaddr_in6 *fromaddrp, unsigned char *msg, int *len, domnode_t **dptr);
 
 #endif  /* _DNRD_RELAY_H_ */

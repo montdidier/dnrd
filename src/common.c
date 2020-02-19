@@ -69,8 +69,8 @@ int                 forward_timeout = FORWARD_TIMEOUT;
 #ifndef __CYGWIN__
 uid_t               daemonuid = 0;
 gid_t               daemongid = 0;
-char                dnrd_user[256] = "dnrd";
-char                dnrd_group[256] = "dnrd";
+char                dnrd_user[NAME_MAX] = "dnrd";
+char                dnrd_group[NAME_MAX] = "dnrd";
 #endif
 const char*         version = PACKAGE_VERSION;
 int                 foreground = 0; /* 1 if attached to a terminal */
@@ -81,9 +81,9 @@ int                 stats_interval = 0;
 int                 stats_reset = 1;
 
 /* The path where we chroot. All config files are relative this path */
-char                dnrd_root[512] = DNRD_ROOT;
+char                dnrd_root[PATH_MAX] = DNRD_ROOT;
 
-char                config_file[512] = DNRD_ROOT "/" CONFIG_FILE;
+char                config_file[PATH_MAX] = DNRD_ROOT "/" CONFIG_FILE;
 
 domnode_t           *domain_list;
 /* turn this on to skip cache hits from responses of inactive dns servers */
@@ -106,16 +106,9 @@ fd_set              fdmaster;
  * which means we listen on all local addresses.  Both the address and
  * the port can be changed through command-line options.
  */
-/*
-#if defined(__sun__)
-struct sockaddr_in recv_addr = { AF_INET, 53, { { {0, 0, 0, 0} } } };
-#else
-struct sockaddr_in recv_addr = { AF_INET, 53, { INADDR_ANY } };
-#endif
-*/
 
 /* init recv_addr in main.c instead of here */ 
-struct sockaddr_in recv_addr;
+struct sockaddr_in6 recv_addr;
 
 #ifdef ENABLE_PIDFILE
 /* check if a pid is running 
@@ -228,7 +221,7 @@ void log_msg(int type, const char *fmt, ...)
     va_start(ap, fmt);
 
     if (foreground) {
-			fprintf(stderr, get_typestr(type));
+			fprintf(stderr, "%s", get_typestr(type));
 			vfprintf(stderr, fmt, ap);
 			if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
     }
@@ -255,12 +248,12 @@ void log_debug(int level, const char *fmt, ...)
 
     va_start(ap, fmt);
     if (foreground) {
-	fprintf(stderr, "Debug: ");
-	vfprintf(stderr, fmt, ap);
-	if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
-    }
-    else {
-	vsyslog(LOG_DEBUG, fmt, ap);
+      fprintf(stderr, "Debug: ");
+      vfprintf(stderr, fmt, ap);
+      if (fmt[strlen(fmt) - 1] != '\n')
+        fprintf(stderr, "\n");
+    } else {
+	    vsyslog(LOG_DEBUG, fmt, ap);
     }
     va_end(ap);
 }
@@ -314,7 +307,7 @@ void log_err_exit(int exitcode, const char *fmt, ...)
     va_start(ap, fmt);
 
     if (foreground) {
-			fprintf(stderr, get_typestr(LOG_ERR));
+			fprintf(stderr, "%s", get_typestr(LOG_ERR));
 			vfprintf(stderr, fmt, ap);
 			if (fmt[strlen(fmt) - 1] != '\n') fprintf(stderr, "\n");
     }
@@ -378,7 +371,7 @@ char *cname2asc(const char *cname) {
      according to RFC 1035 a name must not be bigger than 255 octets.
    */
   if (cname) 
-    snprintf_cname((char *)cname, strlen(cname), 0, buf, sizeof(buf));
+    snprintf_cname((unsigned char *)cname, strlen(cname), 0, buf, sizeof(buf));
   else
     strncpy(buf, "(default)", sizeof(buf));
   return buf;

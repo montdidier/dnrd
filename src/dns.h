@@ -91,11 +91,11 @@ typedef struct _header {
     short int	arcount;	/* Till here it would fit perfectly to a real
     				 * DNS packet if we had big endian. */
 
-    char	*here;		/* For packet parsing. */
-    char	*packet;	/* The actual data packet ... */
+    unsigned char	*here;		/* For packet parsing. */
+    unsigned char	*packet;	/* The actual data packet ... */
     int		len;		/* ... with this size in bytes. */
 
-    char	*rdata;		/* For packet assembly. */
+    unsigned char	*rdata;		/* For packet assembly. */
 } dnsheader_t;
 
 
@@ -106,7 +106,7 @@ int free_packet(dnsheader_t *x);
 void init_dns(void);
 dnsheader_t *parse_packet(unsigned char *packet, int len);
 int parse_query(rr_t *query, unsigned char *msg, int len);
-int snprintf_cname(char *msg, const int msgsize, /* the dns packet */
+int snprintf_cname(unsigned char *msg, const int msgsize, /* the dns packet */
 									 int index, /* where in the DNS packet the name is */
 									 char *dest, int destsize); /* where to store the cname */
 

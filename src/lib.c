@@ -70,7 +70,7 @@ char *strnlwr(char *string, const int maxlen)
 
     if (!string) return NULL;
     for (i=0; (i<=maxlen) && (string[i] != 0); i++) {
-	string[i] = tolower(string[i]);
+      string[i] = tolower(string[i]);
     }
 
     return (string);
@@ -82,7 +82,7 @@ char *strnupr(char *string, const int maxlen)
 
     if (!string) return NULL;
     for (i=0; (i<=maxlen) && string[i]; i++) {
-	string[i] = toupper(string[i]);
+      string[i] = toupper(string[i]);
     }
 
     return (string);
@@ -94,7 +94,7 @@ char *skip_ws(char *string)
     unsigned int c;
 
     while ((c = *string) == ' '  ||  c == '\t') {
-	string++;
+      string++;
     }
 
     return (string);
@@ -102,47 +102,46 @@ char *skip_ws(char *string)
 
 char *noctrln(char *buffer, const int maxlen)
 {
-    int	len, i;
-    unsigned char *p;
+  int	len, i;
+  char *p;
 
-    if ((p = buffer) == NULL) {
-	return (NULL);
+  if ((p = buffer) == NULL) {
+    return (NULL);
+  }
+
+  len = strnlen(p, maxlen);
+  for (i=len-1; i>=0; i--) {
+    if (p[i] <= 32) {
+      p[i] = '\0';
+    } else {
+      break;
     }
+  }
 
-    len = strnlen(p, maxlen);
-    for (i=len-1; i>=0; i--) {
-	if (p[i] <= 32) {
-	    p[i] = '\0';
-	}
-	else {
-	    break;
-	}
-    }
-
-    return (p);
+  return (p);
 }
 
 char *get_word(char **from, char *to, int maxlen)
 {
     unsigned int c;
-    unsigned char *p;
+    char *p;
     int	k;
 
     maxlen -= 2;
     while ((c = **from) != 0  &&  c <= 32) {
-	*from += 1;
+      *from += 1;
     }
 
     *(p = to) = k = 0;
     while ((c = **from) != 0) {
-	if (c == ' '  ||  c == '\t'  ||  c < 32) {
-	    break;
-	}
+      if (c == ' '  ||  c == '\t'  ||  c < 32) {
+        break;
+      }
 
-	*from += 1;
-	if (k < maxlen) {
-	    p[k++] = c;
-	}
+      *from += 1;
+      if (k < maxlen) {
+        p[k++] = c;
+      }
     }
 
     p[k] = 0;
@@ -197,11 +196,10 @@ unsigned int get_stringcode(char *string)
 
     code = 0;
     for (i=0; (c = (unsigned char) string[i]) != 0; i++) {
-	if (isupper(c)) {
-	    c = tolower(c);
-	}
-
-	code = code + c;
+      if (isupper(c)) {
+        c = tolower(c);
+      }
+      code = code + c;
     }
 
     code = (code & 0xFF) + (strlen(string) << 8);

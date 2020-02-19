@@ -69,8 +69,8 @@ int                 forward_timeout = FORWARD_TIMEOUT;
 #ifndef __CYGWIN__
 uid_t               daemonuid = 0;
 gid_t               daemongid = 0;
-char                dnrd_user[256] = "dnrd";
-char                dnrd_group[256] = "dnrd";
+char                dnrd_user[NAME_MAX] = "dnrd";
+char                dnrd_group[NAME_MAX] = "dnrd";
 #endif
 const char*         version = PACKAGE_VERSION;
 int                 foreground = 0; /* 1 if attached to a terminal */
@@ -81,9 +81,9 @@ int                 stats_interval = 0;
 int                 stats_reset = 1;
 
 /* The path where we chroot. All config files are relative this path */
-char                dnrd_root[512] = DNRD_ROOT;
+char                dnrd_root[PATH_MAX] = DNRD_ROOT;
 
-char                config_file[512] = DNRD_ROOT "/" CONFIG_FILE;
+char                config_file[PATH_MAX] = DNRD_ROOT "/" CONFIG_FILE;
 
 domnode_t           *domain_list;
 /* turn this on to skip cache hits from responses of inactive dns servers */

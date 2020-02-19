@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([dnrd], [2.21_beta1], [dnrd-user@lists.sourceforge.net])
+AC_INIT([dnrd], [2.30_beta1], [dnrd-user@lists.sourceforge.net])
 AC_CANONICAL_SYSTEM
 
 AM_CONFIG_HEADER(src/config.h)

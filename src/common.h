@@ -29,6 +29,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <syslog.h>
 #include <semaphore.h>
@@ -95,19 +96,19 @@ extern struct sockaddr_in6 recv_addr; /* address on which we receive queries */
 #ifndef __CYGWIN__
 extern uid_t               daemonuid; /* to switch to once daemonised */
 extern gid_t               daemongid; /* to switch to once daemonised */
-extern char                dnrd_user[256];
-extern char                dnrd_group[256];
+extern char                dnrd_user[NAME_MAX];
+extern char                dnrd_group[NAME_MAX];
 #endif
 extern int                 foreground;
 #ifndef EXCLUDE_MASTER
 extern int		   master_onoff;
 extern unsigned char       master_reload;
-extern char                master_config[256];
-extern char                blacklist[256];
+extern char                master_config[NAME_MAX];
+extern char                blacklist[NAME_MAX];
 #endif
 extern sem_t*              dnrd_sem;  /* Used for all thread synchronization */
 
-extern char                dnrd_root[512];
+extern char                dnrd_root[PATH_MAX];
 extern char                config_file[];
 extern domnode_t           *domain_list;
 

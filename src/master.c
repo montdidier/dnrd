@@ -81,8 +81,6 @@ typedef struct _nameip {
 #define	DNS_DNS			2
 #define	DNS_AUTHORITY		3
 
-#define CONFIG_BYTES 256
-
 typedef struct _dnsrec {
     int		type;
     string_t	object;
@@ -95,8 +93,8 @@ typedef struct _dnsrec {
 
 unsigned char master_reload	= 0;
 int master_onoff		= 1;
-char master_config[CONFIG_BYTES]	= MASTER_CONFIG;
-char blacklist[CONFIG_BYTES]      = MASTER_BLACKLIST;
+char master_config[NAME_MAX]	= MASTER_CONFIG;
+char blacklist[NAME_MAX]      = MASTER_BLACKLIST;
 
 static int master_initialised	= 0;
 

@@ -142,27 +142,27 @@ void init_socket(void) {
    struct servent    *servent_udp;
    struct servent    *servent_tcp;
 
-    /*
-     * Pretend we don't know that we want port 53
-     */
-    servent_udp = getservbyname("domain", "udp");
-    servent_tcp = getservbyname("domain", "tcp");
-    if (servent_udp->s_port != servent_tcp->s_port)
-			log_err_exit(-1, "domain ports for udp & tcp differ. "
-									 "Check /etc/services");
+   /*
+    * Pretend we don't know that we want port 53
+    */
+   servent_udp = getservbyname("domain", "udp");
+   servent_tcp = getservbyname("domain", "tcp");
+   if (servent_udp->s_port != servent_tcp->s_port)
+      log_err_exit(-1, "domain ports for udp & tcp differ. "
+            "Check /etc/services");
 
-    recv_addr.sin6_port = servent_udp ? servent_udp->s_port : htons(53);
+   recv_addr.sin6_port = servent_udp ? servent_udp->s_port : htons(53);
 
-    /*
-     * Setup our DNS query reception socket.
-     */
-    if ((isock = socket(PF_INET6, SOCK_DGRAM, 0)) < 0) {
-			log_err_exit(-1, "isock: Couldn't open socket");
-		}
-    else {
-			int opt = 1;
-			setsockopt(isock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    }
+   /*
+    * Setup our DNS query reception socket.
+    */
+   if ((isock = socket(PF_INET6, SOCK_DGRAM, 0)) < 0) {
+      log_err_exit(-1, "isock: Couldn't open socket");
+   }
+   else {
+      int opt = 1;
+      setsockopt(isock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+   }
 
    if (bind(isock, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0)
       log_err_exit(-1, "isock: Couldn't bind local address");
@@ -171,16 +171,16 @@ void init_socket(void) {
     * Setup our DNS tcp proxy socket.
     */
 #ifdef ENABLE_TCP
-    if ((tcpsock = socket(PF_INET6, SOCK_STREAM, 0)) < 0) {
-			log_err_exit(-1, "tcpsock: Couldn't open socket");
-    } else {
-	    int opt = 1;
-	    setsockopt(tcpsock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    }
-    if (bind(tcpsock, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0)
-			log_err_exit(-1, "tcpsock: Couldn't bind local address");
-    if (listen(tcpsock, 5) != 0)
-			log_err_exit(-1, "tcpsock: Can't listen");
+   if ((tcpsock = socket(PF_INET6, SOCK_STREAM, 0)) < 0) {
+      log_err_exit(-1, "tcpsock: Couldn't open socket");
+   } else {
+      int opt = 1;
+      setsockopt(tcpsock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+   }
+   if (bind(tcpsock, (struct sockaddr *)&recv_addr, sizeof(recv_addr)) < 0)
+      log_err_exit(-1, "tcpsock: Couldn't bind local address");
+   if (listen(tcpsock, 5) != 0)
+      log_err_exit(-1, "tcpsock: Can't listen");
 #endif
 }
 
@@ -207,32 +207,32 @@ int main(int argc, char *argv[])
    srvnode_t *s;
    char *tmpstr;
 
-	/*
-	 * Initialization in common.h of recv_addr is broken, causing at
-	 * least the '-a' switch not to work.  Instead of assuming
-	 * positions of fields in the struct across platforms I thought it
-	 * safer to do a standard initialization in main().
-	 */
-	memset(&recv_addr, 0, sizeof(recv_addr));
-	recv_addr.sin6_family = AF_INET6;
-	
-	openlog(progname, LOG_PID, LOG_DAEMON);
-	
-	/* create the domain list */
-	domain_list = alloc_domnode();
-	
-	/* get the dnrd_root from environment */
-	if ((tmpstr = getenv("DNRD_ROOT")))
-		strncpy(dnrd_root, tmpstr, sizeof(dnrd_root));
-	
-	/*
-	 * Parse the command line.
-     */
-	parse_args(argc, argv);
-	
-	/* we change to the dnrd-root dir */
-	chdir(dnrd_root);
-	
+   /*
+    * Initialization in common.h of recv_addr is broken, causing at
+    * least the '-a' switch not to work.  Instead of assuming
+    * positions of fields in the struct across platforms I thought it
+    * safer to do a standard initialization in main().
+    */
+   memset(&recv_addr, 0, sizeof(recv_addr));
+   recv_addr.sin6_family = AF_INET6;
+
+   openlog(progname, LOG_PID, LOG_DAEMON);
+
+   /* create the domain list */
+   domain_list = alloc_domnode();
+
+   /* get the dnrd_root from environment */
+   if ((tmpstr = getenv("DNRD_ROOT")))
+      strncpy(dnrd_root, tmpstr, sizeof(dnrd_root));
+
+   /*
+    * Parse the command line.
+    */
+   parse_args(argc, argv);
+
+   /* we change to the dnrd-root dir */
+   chdir(dnrd_root);
+
 #ifdef ENABLE_PIDFILE
    /* Kill any currently running copies of the program. */
    kill_current();
@@ -304,21 +304,21 @@ int main(int argc, char *argv[])
    if (setuid(daemonuid) < 0)
       log_err_exit(-1, "Could not switch to uid %i", daemonuid);
 #endif /** } __CYGWIN__ **/
-	
-	/*
-	 * Setup our DNS query forwarding socket.
-	 */
-	p=domain_list;
-	do {
-		s=p->srvlist;
-		while ((s=s->next) != p->srvlist) {
-			s->addr.sin6_family = AF_INET6;
-			s->addr.sin6_port   = htons(53);
-		}
-		/* set the first server as current */
-		p->current = p->srvlist->next;
-	} while ((p=p->next) != domain_list);
-	
+
+   /*
+    * Setup our DNS query forwarding socket.
+    */
+   p=domain_list;
+   do {
+      s=p->srvlist;
+      while ((s=s->next) != p->srvlist) {
+         s->addr.sin6_family = AF_INET6;
+         s->addr.sin6_port   = htons(53);
+      }
+      /* set the first server as current */
+      p->current = p->srvlist->next;
+   } while ((p=p->next) != domain_list);
+
 #ifndef __CYGWIN__ /** { **/
    /*
     * Now it's time to become a daemon.

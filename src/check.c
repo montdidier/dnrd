@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * check.c - validation of DNS packets
  *
  * Copyright (C) 2004 Natanael Copa <n@tanael.org>

@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * query.c
  *
  * This is a complete rewrite of Brad garcias query.c

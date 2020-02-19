@@ -1,4 +1,4 @@
-/*
+/* vim:set et ts=3 sw=3:
 
     File: cache.c -- add response caching
     

@@ -1,3 +1,5 @@
+/* vim:set et ts=3 sw=3: */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

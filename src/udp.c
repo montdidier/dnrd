@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * udp.c - handle upd connections
  *
  * Copyright (C) 1999 Brad M. Garcia <garsh@home.com>

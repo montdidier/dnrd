@@ -29,9 +29,9 @@ system.  You can play games with /etc/resolv.conf, such as copying other
 versions of this file in place depending on which ISP you're dialing into,
 but that is a pain.  Instead, you can run DNRD on your dial-up machine.
 Whenever you dial into an ISP, run dnrd with the appropriate DNS server
-as an argument.  Here's an example of how you would run it:
+as an argument. Here's an example of how you would run it:
 
-    dnrd  -s 1.2.3.4
+    dnrd  -s 8.8.8.8
 
 DNRD was originally designed to work in conjuction with mserver.  It works
 very well with mserver, but works just fine with other dialup systems as well
@@ -41,10 +41,10 @@ Please read the INSTALL file for information on how to build & run dnrd.
 
 Download
 -------------------------
-Latest release of dnrd is [2.20.4](https://github.com/benjaminpetrin/dnrd/releases/download/2.20.4/dnrd-2.20.4.tar.gz).
+Latest release of dnrd is [2.20.4](https://github.com/montdidier/dnrd/releases/download/2.20.4/dnrd-2.20.4.tar.gz).
 
-Use Github's release system to get [other versions](https://github.com/benjaminpetrin/dnrd/releases).
-The last few version's tarbals have been migrated from the original
+Use Github's release system to get [other versions](https://github.com/montdidier/dnrd/releases).
+The last few version's tarballs have been migrated from the original
 SourceForge project.
 
 Alternatives

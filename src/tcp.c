@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * tcprequest.c - handle TCP request by transparent proxying.
  *
  * Copyright (C) 1999 Wolfgang Zekoll <wzk@quietsche-entchen.de>

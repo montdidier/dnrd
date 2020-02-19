@@ -1,4 +1,4 @@
-/*
+/* vim:set et ts=3 sw=3:
  * relay.c - the guts of the program.
  *
  * Copyright (C) 1998 Brad M. Garcia <garsh@home.com>

@@ -1,4 +1,4 @@
-/*
+/* vim:set et ts=3 sw=3:
 ------------------------------------------------------------------------------
 rand.c: By Bob Jenkins.  My random number generator, ISAAC.  Public Domain.
 MODIFIED:

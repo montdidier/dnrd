@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * args.c - data and functions dealing with command-line argument processing.
  *
  * Copyright (C) 1998 Brad M. Garcia <garsh@home.com>

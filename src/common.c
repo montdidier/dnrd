@@ -1,4 +1,5 @@
-/*
+/* vim:set et ts=3 sw=3:
+ *
  * common.c - includes global variables and functions.
  *
  * Copyright (C) 1998 Brad M. Garcia <garsh@home.com>

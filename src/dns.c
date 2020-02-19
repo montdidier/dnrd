@@ -1,5 +1,4 @@
-
-/*
+/* vim:set et ts=3 sw=3:
 
     File: dns.c
     

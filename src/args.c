@@ -57,6 +57,7 @@ static struct option long_options[] =
     {"help",         0, 0, 'h'},
     {"ignore",       0, 0, 'i'},
 #ifdef ENABLE_PIDFILE
+    {"pidfile",      0, 0, 'P'},
     {"kill",         0, 0, 'k'},
 #endif
     {"max-sock",     1, 0, 'M'},
@@ -65,7 +66,7 @@ static struct option long_options[] =
 #endif
     {"retry",        1, 0, 'r'},
     {"server",       1, 0, 's'},
-		{"stats",        1, 0, 'S'},
+    {"stats",        1, 0, 'S'},
     {"timeout",      1, 0, 't'},
 #ifndef __CYGWIN__
     {"uid",          1, 0, 'u'},
@@ -86,7 +87,7 @@ static struct option long_options[] =
 #endif
 
 #ifdef ENABLE_PIDFILE
-#define PIDPARM "k"
+#define PIDPARM "kP:"
 #else
 #define PIDPARM 
 #endif
@@ -124,7 +125,7 @@ static void give_help()
 "                            \"blacklist\"\n"
 #endif
 "    -c, --cache=off|[LOW:]HIGH\n"
-"                            Turn off cache or tune the low/high water marks\n"
+"                            Turn off cache or tune the low/high water marks.\n"
 "    -d, --debug=LEVEL       Set the debugging level. Level 0 (default)\n"
 "                            means no debugging at all.\n"
 "    -f, --foreground        Run program in foreground rather than fork.\n"
@@ -136,6 +137,7 @@ static void give_help()
 "    -h, --help              Print this message, then exit.\n"
 "    -i, --ignore            Ignore cache for disabled servers.\n"
 #ifdef ENABLE_PIDFILE
+"    -P, --pidfile=PATH      Use PATH as a pidfile.\n"
 "    -k, --kill              Kill a running daemon.\n"
 #endif
 #ifndef EXCLUDE_MASTER
@@ -172,7 +174,7 @@ static void give_help()
 "              $DNRD_ROOT (--dnrd-root). Default is \"blacklist\"\n"
 #endif
 "    -c off|[LOW:]HIGH\n"
-"              Turn off caching or tune the low/high water marks"
+"              Turn off caching or tune the low/high water marks.\n"
 "    -d LEVEL  Set the debugging level. Level 0 (default) means no debugging\n"
 "              at all.\n"
 "    -f        Run program in foreground rather than fork.\n"
@@ -184,6 +186,7 @@ static void give_help()
 "    -h        Print this message, then exit.\n"
 "    -i        Ignore cache for disabled servers\n"
 #ifdef ENABLE_PIDFILE
+"    -P PATH   Use PATH as a pidfile.\n"
 "    -k        Kill a running daemon.\n"
 #endif
 #ifndef EXCLUDE_MASTER
@@ -284,6 +287,11 @@ int parse_args(int argc, char **argv)
 	    break;
 	  }
 #ifdef ENABLE_PIDFILE
+	 case 'P': {
+	      strncpy(pid_file, optarg, sizeof(pid_file));
+	      log_debug(1, "Using %s as PIDFILE", pid_file);
+	      break;
+	  }
 	  case 'k': {
 	      if (!kill_current()) {
 		  printf("No %s daemon found.  Exiting.\n", progname);

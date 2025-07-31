@@ -43,6 +43,15 @@
 #define CONFIG_FILE "dnrd.conf"
 #endif
 
+/* If PID file is enabled, set the default location */
+#ifdef ENABLE_PIDFILE
+#if defined(__sun__)
+#define PID_FILE "/var/tmp/dnrd.pid"
+#else
+#define PID_FILE "/var/run/dnrd.pid"
+#endif
+#endif
+
 /* Set the default timeout value for select in seconds */
 #ifndef SELECT_TIMEOUT
 #define SELECT_TIMEOUT 1
@@ -86,7 +95,7 @@ struct dnssrv_t {
 extern const char*         version;   /* the version number for this program */
 extern const char*         progname;  /* the name of this program */
 extern int                 opt_debug; /* debugging option */
-extern const char*         pid_file; /* File containing current daemon's PID */
+extern char                pid_file[256]; /* File containing current daemon's PID */
 extern int                 isock;     /* for communication with clients */
 extern int                 tcpsock;   /* same as isock, but for tcp requests */
 extern int                 select_timeout; /* select timeout in seconds */

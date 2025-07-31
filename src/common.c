@@ -51,13 +51,7 @@ int                 opt_debug = OPT_DEBUG;
 int                 opt_serv = 0;
 const char*         progname = 0;
 
-#ifdef ENABLE_PIDFILE
-#if defined(__sun__)
-const char*         pid_file = "/var/tmp/dnrd.pid";
-#else
-const char*         pid_file = "/var/run/dnrd.pid";
-#endif
-#endif
+char          	    pid_file[256] = PID_FILE;
 
 int                 isock = -1;
 #ifdef ENABLE_TCP
